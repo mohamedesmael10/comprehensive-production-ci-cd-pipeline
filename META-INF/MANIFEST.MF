@@ -1,0 +1,11 @@
+Manifest-Version: 1.0
+Implementation-Title: maven-wrapper
+Implementation-Version: 0.5.6
+Archiver-Version: Provisio Archiver
+Built-By: manfred
+Specification-Title: maven-wrapper
+Implementation-Vendor-Id: io.takari
+Created-By: Takari Inc.
+Build-Jdk: 1.8.0_232
+Specification-Version: 0.5.6
+

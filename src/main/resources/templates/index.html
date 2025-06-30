@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mohamed Mostafa Esmael – Profile</title>
+  <!-- Google Font & Font Awesome -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-eyJ/Pr9X2Csqvx7VZ/GE5ksmV0N1hdbYQYv06HVjJgnxjSNNHYIryoA1+SfsGQZ5fGGJmpP2Xrrw1u7nBpjJkw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <style>
+    /* ─── Base variables ───────────────────────────── */
+    :root {
+      --bg-gradient: linear-gradient(135deg, #e3f2fd 0%, #fdfdfd 100%);
+      --card-bg: #ffffff;
+      --text-dark: #2e2e2e;
+      --radius: 12px;
+      --shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+      --max-width: 640px;
+      --font-stack: "Poppins", Arial, sans-serif;
+    }
+
+    /* ─── Global reset & font ───────────────────────── */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-stack);
+      background: var(--bg-gradient);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    /* ─── Card container ───────────────────────────── */
+    .container {
+      width: 100%;
+      max-width: var(--max-width);
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 2.5rem 2.25rem;
+      text-align: center;
+      box-shadow: var(--shadow);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .container:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+    }
+
+    .profile-image {
+      width: 160px;
+      height: 160px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 4px solid #fff;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      margin-bottom: 1.4rem;
+    }
+
+    h1 {
+      color: var(--text-dark);
+      font-size: 2rem;
+      font-weight: 500;
+      margin-bottom: .6rem;
+    }
+    p.subtitle {
+      color: #555;
+      font-size: 1rem;
+      margin-bottom: 1.6rem;
+    }
+
+    /* ─── Buttons / links ──────────────────────────── */
+    a.button {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      padding: 0.65rem 1.5rem;
+      border-radius: 30px;
+      background: #0d6efd;
+      color: #fff;
+      text-decoration: none;
+      font-weight: 500;
+      transition: background 0.25s ease, transform 0.25s ease;
+      box-shadow: 0 3px 6px rgba(13,110,253,0.3);
+    }
+    a.button:hover {
+      background: #084298;
+      transform: translateY(-2px);
+    }
+    a.button i { font-size: 1.05rem; }
+
+    /* ─── Responsive tweak ─────────────────────────── */
+    @media (max-width: 480px) {
+      .profile-image { width: 130px; height: 130px; }
+      h1 { font-size: 1.6rem; }
+      .container { padding: 2rem 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <section class="container" aria-label="Profile card">
+    <img src="/profile.jpg" alt="Mohamed Mostafa Esmael" class="profile-image" loading="lazy">
+    <h1>Mohamed Mostafa Esmael</h1>
+    <p class="subtitle">DevOps &amp; Cloud Engineer • Networking & Automation Enthusiast</p>
+
+    <div class="links" style="display:flex;justify-content:center;gap:1rem;flex-wrap:wrap;">
+      <a href="/resume.pdf" class="button" download>
+        <i class="fas fa-file-arrow-down"></i>
+        Download CV
+      </a>
+      <a href="https://www.linkedin.com/in/mohamedesmael" class="button" target="_blank" rel="noopener">
+        <i class="fab fa-linkedin"></i>
+        LinkedIn
+      </a>
+    </div>
+  </section>
+</body>
+</html>
+
