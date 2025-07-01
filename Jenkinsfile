@@ -8,10 +8,6 @@ pipeline {
         maven 'Maven3'
     }
 
-    environment {
-        JENKINS_API_TOKEN = credentials("JENKINS_API_TOKEN")
-    }
-
     stages {
         stage("Cleanup Workspace") {
             steps {
