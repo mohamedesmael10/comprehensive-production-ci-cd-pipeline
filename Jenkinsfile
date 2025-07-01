@@ -3,10 +3,16 @@ pipeline {
         label "jenkins-agent"
     }
 
-    tools {
-        jdk 'Java17'
-        maven 'Maven3'
+  environment {
+        JAVA_HOME = '/usr/lib/jvm/temurin-17-jdk-amd64'
+        PATH = "${JAVA_HOME}/bin:${env.PATH}"
     }
+
+    tools {
+        jdk 'Java17'    
+        maven 'Maven3' 
+    }
+
 
     stages {
         stage("Cleanup Workspace") {
@@ -38,7 +44,7 @@ pipeline {
         stage("SonarQube Analysis") {
             steps {
                 script {
-                    withSonarQubeEnv('jenkins-sonarqube-token') {
+                    withSonarQubeEnv(credentialsId: 'jenkins_sonarqube_token') {
                         sh "mvn sonar:sonar"
                     }
                 }
@@ -54,4 +60,3 @@ pipeline {
         }
     }
 }
-
