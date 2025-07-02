@@ -36,3 +36,13 @@ logs/
 *.tmp
 *.bak
 
+target/
+.git
+.idea/
+*.iml
+*.log
+*.tmp
+Dockerfile
+.dockerignore
+
+
