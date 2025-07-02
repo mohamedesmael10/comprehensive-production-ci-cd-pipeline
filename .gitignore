@@ -1,29 +1,33 @@
 
 /target/
-!/target/.gitkeep
+!/target/.gitkeep                # keep placeholder if you version an empty dir
 
-#
+
 .mvn/wrapper/*
 !.mvn/wrapper/maven-wrapper.jar
 !.mvn/wrapper/maven-wrapper.properties
 
+# IntelliJ IDEA
 .idea/
 *.iml
 *.iws
 out/
 
-
+# VS Code
 .vscode/
 
+# Eclipse
 .project
 .classpath
 .settings/
 bin/
 
+# NetBeans
 nbproject/private/
-build/
 nbbuild/
+build/
 dist/
+
 
 .DS_Store
 Thumbs.db
@@ -36,13 +40,8 @@ logs/
 *.tmp
 *.bak
 
-target/
-.git
-.idea/
-*.iml
-*.log
-*.tmp
+
 Dockerfile
 .dockerignore
 
-
+.git
