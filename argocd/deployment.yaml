@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nginx
+  name: comprehensive-production-ci-cd-pipeline
 spec:
   replicas: 2
   selector:
@@ -13,13 +13,11 @@ spec:
         run: comprehensive-production-ci-cd-pipeline
     spec:
       containers:
-      - name: comprehensive-production-ci-cd-pipeline
-        image: mohamedesmael/comprehensive-production-ci-cd-pipeline:1.0.0-18
-	resources:
-	 limits:
-	  memory: "256Mi"
-	  cpu: "500n"
-        ports:
-          - containerPort: 8080
-
-
+        - name: comprehensive-production-ci-cd-pipeline
+          image: mohamedesmael/comprehensive-production-ci-cd-pipeline:1.0.0-18
+          resources:
+            limits:
+              memory: "256Mi"
+              cpu: "500n"
+          ports:
+            - containerPort: 8080
