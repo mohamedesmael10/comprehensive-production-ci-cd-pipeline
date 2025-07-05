@@ -16,7 +16,7 @@ pipeline {
 
         stage("Checkout from SCM") {
             steps {
-                git branch: 'main', credentialsId: 'github-pat', url: 'https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline'
+                git branch: 'main', credentialsId: 'github', url: 'https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline'
             }
         }
 
