@@ -6,8 +6,7 @@ spec:
   replicas: 2
   selector:
     matchLabels:
-      run: comprehensive-production-ci-cd-pipeline-1.0.0-18
-  template:
+      run: production-ci-cd-pipeline
     metadata:
       labels:
         run: production-ci-cd-pipeline
