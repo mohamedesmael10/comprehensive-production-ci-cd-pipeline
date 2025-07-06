@@ -4,8 +4,6 @@ pipeline {
     }
 
     environment {
-        JAVA_HOME = '/usr/lib/jvm/temurin-17-jdk-amd64'
-        PATH = "${JAVA_HOME}/bin:${env.PATH}"
         RELEASE = "1.0.0"
         DOCKER_USER = "mohamedesmael"
         DOCKER_PASS = 'dockerhub'
@@ -83,7 +81,7 @@ pipeline {
                             sh '''
                                 docker run -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image \
                                 mohamedesmael/comprehensive-production-ci-cd-pipeline:latest \
-                                --no-progress --scanners vuln --exit-code 0 --severity HIGH,CRITICAL --format table \
+                                --no-progress --scanners vuln --exit-code 1 --severity HIGH,CRITICAL --format table \
                                 --timeout 30m
                             '''
                            }
@@ -124,22 +122,23 @@ pipeline {
                 }
             }
         }
-      post {
-        failure {
-            emailext(
-                subject: "${env.JOB_NAME} - Build #${env.BUILD_NUMBER} - Failed",
-                body: "The build failed. Please check the Jenkins console output.",
-                mimeType: 'text/plain',
-                to: "mohamed.2714104@gmail.com"
-            )
-        }
-        success {
-            emailext(
-                subject: "${env.JOB_NAME} - Build #${env.BUILD_NUMBER} - Successful",
-                body: "The build was successful. You can proceed with the next steps.",
-                mimeType: 'text/plain',
-                to: "mohamed.2714104@gmail.com"
-            )
+          post {
+            failure {
+                emailext(
+                    subject: "${env.JOB_NAME} - Build #${env.BUILD_NUMBER} - Failed",
+                    body: "The build failed. Please check the Jenkins console output.",
+                    mimeType: 'text/plain',
+                    to: "mohamed.2714104@gmail.com"
+                )
+            }
+            success {
+                emailext(
+                    subject: "${env.JOB_NAME} - Build #${env.BUILD_NUMBER} - Successful",
+                    body: "The build was successful. You can proceed with the next steps.",
+                    mimeType: 'text/plain',
+                    to: "mohamed.2714104@gmail.com"
+                )
+            }
         }
     }
 }
