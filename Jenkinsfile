@@ -105,9 +105,8 @@ pipeline {
                 script {
                     echo "Triggering CD pipeline with IMAGE_TAG=${IMAGE_TAG}"
                     def result = sh(script: """
-                        curl -v -X POST \
-                        -H "Authorization: Basic $(echo -n "esmael:${JENKINS_API_TOKEN}" | base64)" \
-                        -d "IMAGE_TAG=${IMAGE_TAG}" \
+                        curl -v -u "esmael:${JENKINS_API_TOKEN}" \                                                                                                          ─╯
+                        -d "IMAGE_TAG=${IMAGE_TAG}" \                                             
                         "https://mohamedesmael.work.gd/job/git-comprehensive-pipeline/buildWithParameters?token=gitops-token"
                     """, returnStatus: true)
 
