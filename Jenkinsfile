@@ -79,11 +79,14 @@ pipeline {
         stage("Trivy Scan") {
             steps {
                 script {
-                    sh '''
-                        docker run -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image \
-                        mohamedesmael/comprehensive-production-ci-cd-pipeline:latest \
-                        --no-progress --scanners vuln --exit-code 0 --severity HIGH,CRITICAL --format table
-                    '''
+                    retry(3) {
+                            sh '''
+                                docker run -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image \
+                                mohamedesmael/comprehensive-production-ci-cd-pipeline:latest \
+                                --no-progress --scanners vuln --exit-code 0 --severity HIGH,CRITICAL --format table \
+                                --timeout 30m
+                            '''
+                           }
                 }
             }
         }
@@ -100,7 +103,6 @@ pipeline {
         stage("Trigger CD Pipeline") {
             steps {
                 script {
-                    retry(3) {
                         sh """
                             curl -v -k --user admin:${JENKINS_API_TOKEN} \
                             -X POST -H 'cache-control: no-cache' \
@@ -108,7 +110,6 @@ pipeline {
                             --data 'IMAGE_TAG=${IMAGE_TAG}' \
                             'https://mohamedesmael.work.gd/job/git-comprehensive-production-pipeline/buildWithParameters?token=gitops-token'
                         """
-                    }
                 }
             }
         }
