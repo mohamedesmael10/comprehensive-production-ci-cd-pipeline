@@ -2,7 +2,7 @@ pipeline {
     agent {
         label "jenkins-agent"
     }
-    
+
     environment {
         RELEASE = "1.0.0"
         APP_NAME = "comprehensive-production-ci-cd-pipeline"
@@ -13,10 +13,9 @@ pipeline {
         JENKINS_API_TOKEN = credentials("JENKINS_API_TOKEN")
     }
 
-
     tools {
-        jdk 'Java17'    
-        maven 'Maven3' 
+        jdk 'Java17'
+        maven 'Maven3'
     }
 
     stages {
@@ -28,8 +27,8 @@ pipeline {
 
         stage("Fetch Source Code") {
             steps {
-                git branch: 'main', 
-                    credentialsId: 'github', 
+                git branch: 'main',
+                    credentialsId: 'github',
                     url: 'https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline'
             }
         }
@@ -79,14 +78,12 @@ pipeline {
         stage("Trivy Scan") {
             steps {
                 script {
-                    
-                        sh '''
-                            docker run -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image \
-                            mohamedesmael/comprehensive-production-ci-cd-pipeline:latest \
-                            --no-progress --scanners vuln --exit-code 0 --severity HIGH,CRITICAL --format table \
-                            --timeout 30m
-                        '''
-                    
+                    sh '''
+                        docker run -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image \
+                        mohamedesmael/comprehensive-production-ci-cd-pipeline:latest \
+                        --no-progress --scanners vuln --exit-code 0 --severity HIGH,CRITICAL --format table \
+                        --timeout 30m
+                    '''
                 }
             }
         }
@@ -114,7 +111,7 @@ pipeline {
                         --data 'IMAGE_TAG=${IMAGE_TAG}' \
                         'https://mohamedesmael.work.gd/job/git-comprehensive-production-pipeline/buildWithParameters?token=gitops-token'
                     """, returnStatus: true)
-        
+
                     if (result != 0) {
                         error "Failed to trigger the CD pipeline"
                     } else {
@@ -124,21 +121,31 @@ pipeline {
             }
         }
     }
-    
+
     post {
         failure {
-            emailext(
+            mail(
                 subject: "${env.JOB_NAME} - Build #${env.BUILD_NUMBER} - Failed",
-                body: "The build failed. Please check the Jenkins console output.",
-                mimeType: 'text/plain',
+                body: """The build failed.
+
+You can view the build details here:
+${env.BUILD_URL}
+
+Please check the Jenkins console output for more information.
+""",
                 to: "mohamed.2714104@gmail.com"
             )
         }
         success {
-            emailext(
+            mail(
                 subject: "${env.JOB_NAME} - Build #${env.BUILD_NUMBER} - Successful",
-                body: "The build was successful. You can proceed with the next steps.",
-                mimeType: 'text/plain',
+                body: """The build was successful.
+
+You can view the build details here:
+${env.BUILD_URL}
+
+You can proceed with the next steps.
+""",
                 to: "mohamed.2714104@gmail.com"
             )
         }
