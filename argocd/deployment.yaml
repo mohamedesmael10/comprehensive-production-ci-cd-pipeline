@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: comprehensive-production-ci-cd-pipeline
+  name: comprehensive-production-ci-cd-pipeline:1.0.0-17
 spec:
   replicas: 2
   selector:
     matchLabels:
-      run: comprehensive-production-ci-cd-pipeline
+      run: comprehensive-production-ci-cd-pipeline:1.0.0-17
   template:
     metadata:
       labels:
-        run: comprehensive-production-ci-cd-pipeline
+        run: comprehensive-production-ci-cd-pipeline:1.0.0-17
     spec:
       containers:
-        - name: comprehensive-production-ci-cd-pipeline
-          image: mohamedesmael/comprehensive-production-ci-cd-pipeline:1.0.0-18
+        - name: comprehensive-production-ci-cd-pipeline:1.0.0-17
+          image: mohamedesmael/comprehensive-production-ci-cd-pipeline:1.0.0-17
           resources:
             limits:
               memory: "256Mi"
