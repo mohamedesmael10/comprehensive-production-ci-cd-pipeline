@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: comprehensive-production-ci-cd-pipeline:1.0.0-18
+  name: production-ci-cd-pipeline
 spec:
   replicas: 2
   selector:
