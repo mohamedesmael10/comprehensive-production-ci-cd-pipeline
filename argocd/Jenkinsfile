@@ -24,6 +24,7 @@ pipeline {
             steps {
                 sh """
                 cd argocd
+                ls -l
                 cat deployment.yaml
                 sed -i 's/${APP_NAME}.*/${APP_NAME}:${IMAGE_TAG}/g' deployment.yaml
                 cat deployment.yaml
@@ -36,11 +37,11 @@ pipeline {
                 sh """
                 git config --global user.name "mohamedesmael10"
                 git config --global user.email "mohamed.2714104@gmail.com"
-                git add deployment.yaml
+                git add argocd/deployment.yaml
                 git commit -m "Updated Deployment Manifest"
                 """
 
-                withCredentials([gitUsernamePassword(credentialsId: 'github-pat', gitToolName: 'Default')]) {
+                withCredentials([gitUsernamePassword(credentialsId: 'github', gitToolName: 'Default')]) {
                     sh 'git push https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline main'
                 }
             }
