@@ -105,11 +105,11 @@ pipeline {
                 script {
                     echo "Triggering CD pipeline with IMAGE_TAG=${IMAGE_TAG}"
                     def result = sh(script: """
-                        curl -v -u "esmael:${JENKINS_API_TOKEN}" \                                                                                                          ─╯
-                        -d "IMAGE_TAG=${IMAGE_TAG}" \                                             
+                        curl -v -u "esmael:${JENKINS_API_TOKEN}" \
+                        -d "IMAGE_TAG=${IMAGE_TAG}" \
                         "https://mohamedesmael.work.gd/job/git-comprehensive-pipeline/buildWithParameters?token=gitops-token"
                     """, returnStatus: true)
-
+        
                     if (result != 0) {
                         error "Failed to trigger the CD pipeline"
                     } else {
@@ -118,7 +118,6 @@ pipeline {
                 }
             }
         }
-    }
 
     post {
         failure {
