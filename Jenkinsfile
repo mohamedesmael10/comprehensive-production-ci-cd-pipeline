@@ -94,41 +94,50 @@ pipeline {
         stage("Cleanup Artifacts") {
             steps {
                 script {
+                    echo "Listing Docker images before cleanup"
+                    sh "docker images"
+                    echo "Removing Docker images"
                     sh "docker rmi ${IMAGE_NAME}:${IMAGE_TAG} || true"
                     sh "docker rmi ${IMAGE_NAME}:latest || true"
                 }
             }
         }
 
+
         stage("Trigger CD Pipeline") {
             steps {
                 script {
-                        sh """
-                            curl -v -k --user admin:${JENKINS_API_TOKEN} \
-                            -X POST -H 'cache-control: no-cache' \
-                            -H 'content-type: application/x-www-form-urlencoded' \
-                            --data 'IMAGE_TAG=${IMAGE_TAG}' \
-                            'https://mohamedesmael.work.gd/job/git-comprehensive-production-pipeline/buildWithParameters?token=gitops-token'
-                        """
+                    echo "Triggering CD pipeline with IMAGE_TAG=${IMAGE_TAG}"
+                    def result = sh(script: """
+                        curl -v -k --user admin:${JENKINS_API_TOKEN} \
+                        -X POST -H 'cache-control: no-cache' \
+                        -H 'content-type: application/x-www-form-urlencoded' \
+                        --data 'IMAGE_TAG=${IMAGE_TAG}' \
+                        'https://mohamedesmael.work.gd/job/git-comprehensive-production-pipeline/buildWithParameters?token=gitops-token'
+                    """, returnStatus: true)
+        
+                    if (result != 0) {
+                        error "Failed to trigger the CD pipeline"
+                    } else {
+                        echo "Successfully triggered the CD pipeline"
+                    }
                 }
             }
         }
-    }
-
-    post {
+      post {
         failure {
             emailext(
-                body: '''${SCRIPT, template="groovy-html.template"}''',
                 subject: "${env.JOB_NAME} - Build #${env.BUILD_NUMBER} - Failed",
-                mimeType: 'text/html',
+                body: "The build failed. Please check the Jenkins console output.",
+                mimeType: 'text/plain',
                 to: "mohamed.2714104@gmail.com"
             )
         }
         success {
             emailext(
-                body: '''${SCRIPT, template="groovy-html.template"}''',
                 subject: "${env.JOB_NAME} - Build #${env.BUILD_NUMBER} - Successful",
-                mimeType: 'text/html',
+                body: "The build was successful. You can proceed with the next steps.",
+                mimeType: 'text/plain',
                 to: "mohamed.2714104@gmail.com"
             )
         }
