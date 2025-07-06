@@ -109,7 +109,7 @@ pipeline {
                         -d "IMAGE_TAG=${IMAGE_TAG}" \
                         "https://mohamedesmael.work.gd/job/git-comprehensive-pipeline/buildWithParameters?token=gitops-token"
                     """, returnStatus: true)
-        
+
                     if (result != 0) {
                         error "Failed to trigger the CD pipeline"
                     } else {
@@ -118,6 +118,7 @@ pipeline {
                 }
             }
         }
+    }
 
     post {
         failure {
@@ -133,6 +134,7 @@ Please check the Jenkins console output for more information.
                 to: "mohamed.2714104@gmail.com"
             )
         }
+
         success {
             mail(
                 subject: "${env.JOB_NAME} - Build #${env.BUILD_NUMBER} - Successful",
