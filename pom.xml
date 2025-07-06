@@ -11,11 +11,11 @@
   <version>1.0.0</version>
   <packaging>jar</packaging>
 
-  <!-- Inherit Spring‑Boot dependency management -->
+  <!-- Updated Spring Boot parent to latest stable 3.x -->
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.1.2</version>
+    <version>3.3.0</version>
     <relativePath/>
   </parent>
 
@@ -60,11 +60,10 @@
         <configuration>
           <source>17</source>
           <target>17</target>
-          <release>17</release> <!-- Optional but recommended -->
+          <release>17</release>
         </configuration>
       </plugin>
     </plugins>
   </build>
 
 </project>
-
