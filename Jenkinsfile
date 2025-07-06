@@ -78,13 +78,13 @@ pipeline {
             steps {
                 script {
                     retry(3) {
-                            sh '''
-                                docker run -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image \
-                                mohamedesmael/comprehensive-production-ci-cd-pipeline:latest \
-                                --no-progress --scanners vuln --exit-code 1 --severity HIGH,CRITICAL --format table \
-                                --timeout 30m
-                            '''
-                           }
+                        sh '''
+                            docker run -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image \
+                            mohamedesmael/comprehensive-production-ci-cd-pipeline:latest \
+                            --no-progress --scanners vuln --exit-code 1 --severity HIGH,CRITICAL --format table \
+                            --timeout 30m
+                        '''
+                    }
                 }
             }
         }
@@ -100,7 +100,6 @@ pipeline {
                 }
             }
         }
-
 
         stage("Trigger CD Pipeline") {
             steps {
@@ -122,23 +121,24 @@ pipeline {
                 }
             }
         }
-          post {
-            failure {
-                emailext(
-                    subject: "${env.JOB_NAME} - Build #${env.BUILD_NUMBER} - Failed",
-                    body: "The build failed. Please check the Jenkins console output.",
-                    mimeType: 'text/plain',
-                    to: "mohamed.2714104@gmail.com"
-                )
-            }
-            success {
-                emailext(
-                    subject: "${env.JOB_NAME} - Build #${env.BUILD_NUMBER} - Successful",
-                    body: "The build was successful. You can proceed with the next steps.",
-                    mimeType: 'text/plain',
-                    to: "mohamed.2714104@gmail.com"
-                )
-            }
+    }
+    
+    post {
+        failure {
+            emailext(
+                subject: "${env.JOB_NAME} - Build #${env.BUILD_NUMBER} - Failed",
+                body: "The build failed. Please check the Jenkins console output.",
+                mimeType: 'text/plain',
+                to: "mohamed.2714104@gmail.com"
+            )
+        }
+        success {
+            emailext(
+                subject: "${env.JOB_NAME} - Build #${env.BUILD_NUMBER} - Successful",
+                body: "The build was successful. You can proceed with the next steps.",
+                mimeType: 'text/plain',
+                to: "mohamed.2714104@gmail.com"
+            )
         }
     }
 }
