@@ -10,7 +10,7 @@ pipeline {
         DOCKER_PASS = 'dockerhub'
         IMAGE_NAME = "${DOCKER_USER}/${APP_NAME}"
         IMAGE_TAG = "${RELEASE}-${BUILD_NUMBER}"
-        JENKINS_API_TOKEN = credentials("JENKINS_API_TOKEN")
+        JENKINS_API_TOKEN = credentials("JENKINS_API_TOKEN_2")
     }
 
     tools {
@@ -105,11 +105,10 @@ pipeline {
                 script {
                     echo "Triggering CD pipeline with IMAGE_TAG=${IMAGE_TAG}"
                     def result = sh(script: """
-                        curl -v -k --user esmael:${JENKINS_API_TOKEN} \
-                        -X POST -H 'cache-control: no-cache' \
-                        -H 'content-type: application/x-www-form-urlencoded' \
-                        --data 'IMAGE_TAG=${IMAGE_TAG}' \
-                        'https://mohamedesmael.work.gd/job/git-comprehensive-production-pipeline/buildWithParameters?token=gitops-token'
+                        curl -v -X POST \
+                        -H "Authorization: Basic $(echo -n "esmael:${JENKINS_API_TOKEN}" | base64)" \
+                        -d "IMAGE_TAG=${IMAGE_TAG}" \
+                        "https://mohamedesmael.work.gd/job/git-comprehensive-pipeline/buildWithParameters?token=gitops-token"
                     """, returnStatus: true)
 
                     if (result != 0) {
