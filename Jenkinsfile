@@ -5,9 +5,10 @@ pipeline {
     
     environment {
         RELEASE = "1.0.0"
+        APP_NAME = "comprehensive-production-ci-cd-pipeline"
         DOCKER_USER = "mohamedesmael"
         DOCKER_PASS = 'dockerhub'
-        IMAGE_NAME = "mohamedesmael/comprehensive-production-ci-cd-pipeline"
+        IMAGE_NAME = "${DOCKER_USER}/${APP_NAME}"
         IMAGE_TAG = "${RELEASE}-${BUILD_NUMBER}"
         JENKINS_API_TOKEN = credentials("JENKINS_API_TOKEN")
     }
