@@ -22,16 +22,13 @@ pipeline {
 
         stage("Update the Deployment Tags") {
             steps {
-                script {
-                    def safeImageTag = IMAGE_TAG.replaceAll(":", "-")          
-                    sh """
-                    cd argocd
-                    ls -l
-                    cat deployment.yaml
-                    sed -i 's/${APP_NAME}:.*\${IMAGE_TAG}/\${APP_NAME}-\${safeImageTag}/g' deployment.yaml
-                    cat deployment.yaml
-                    """
-                }
+                sh """
+                cd argocd
+                ls -l
+                cat deployment.yaml
+                sed -i 's/${APP_NAME}.*/${APP_NAME}:${IMAGE_TAG}/g' deployment.yaml
+                cat deployment.yaml
+                """
             }
         }
 
