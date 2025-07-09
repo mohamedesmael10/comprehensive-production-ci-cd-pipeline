@@ -6,10 +6,9 @@
     "tags": ["jenkins", "ci/cd", "monitoring"],
     "timezone": "browser",
     "schemaVersion": 38,
-    "version": 1,
+    "version": 2,
     "style": "dark",
     "editable": true,
-    "hideControls": false,
     "time": {
       "from": "now-1h",
       "to": "now"
@@ -66,7 +65,7 @@
         "datasource": "$DS_PROMETHEUS",
         "targets": [
           {
-            "expr": "jenkins_executor_utilization",
+            "expr": "jenkins_nodes_online",
             "refId": "A"
           }
         ],
@@ -78,39 +77,15 @@
         "datasource": "$DS_PROMETHEUS",
         "targets": [
           {
-            "expr": "jenkins_builds_in_progress",
+            "expr": "jenkins_jobs_running",
             "refId": "A"
           }
         ],
         "gridPos": { "x": 12, "y": 4, "w": 12, "h": 9 }
-      },
-      {
-        "type": "graph",
-        "title": "Build Duration (seconds)",
-        "datasource": "$DS_PROMETHEUS",
-        "targets": [
-          {
-            "expr": "rate(jenkins_builds_duration_sum[5m]) / rate(jenkins_builds_duration_count[5m])",
-            "refId": "A"
-          }
-        ],
-        "gridPos": { "x": 0, "y": 10, "w": 12, "h": 9 }
-      },
-      {
-        "type": "graph",
-        "title": "Failed Builds",
-        "datasource": "$DS_PROMETHEUS",
-        "targets": [
-          {
-            "expr": "increase(jenkins_builds_failed_total[1h])",
-            "refId": "A"
-          }
-        ],
-        "gridPos": { "x": 12, "y": 10, "w": 12, "h": 9 }
       }
     ]
   },
   "overwrite": true,
   "folderId": 0,
-  "message": "Imported by script"
+  "message": "Updated by script"
 }
