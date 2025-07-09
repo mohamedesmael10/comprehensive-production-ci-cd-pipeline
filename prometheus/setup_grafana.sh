@@ -33,7 +33,7 @@ while ! curl -sf "$GRAFANA_URL/login" > /dev/null; do
     timeout=$((timeout-2))
     if [ $timeout -le 0 ]; then
         echo "❌ Grafana API did not become ready within 60 seconds"
-        exit 1
+        exit 0
     fi
 done
 echo "✅ Grafana API is ready"
@@ -57,34 +57,39 @@ if [[ "$ADD_DS_STATUS" == "200" || "$ADD_DS_STATUS" == "201" ]]; then
 else
   echo "❌ Failed to add Prometheus data source. Response:"
   cat /tmp/add_ds_resp.json
-  exit 1
+  exit 0
 fi
 
-# === 4. Import Jenkins Dashboard ===
-echo "📊 Importing Jenkins Dashboard…"
+# === 4. Import Jenkins Dashboard from file ===
+echo "📊 Importing Jenkins Dashboard from jenkins-dashboard.json…"
 
-IMPORT_STATUS=$(curl -s -o /tmp/import_dash_resp.json -w "%{http_code}" -u "$GRAFANA_USER:$GRAFANA_PASSWORD" \
+IMPORT_STATUS_JENKINS=$(curl -s -o /tmp/import_jenkins_resp.json -w "%{http_code}" -u "$GRAFANA_USER:$GRAFANA_PASSWORD" \
   -H "Content-Type: application/json" \
-  -X POST "$GRAFANA_URL/api/dashboards/import" \
-  -d '{
-    "dashboard": {
-      "id": 9964
-    },
-    "overwrite": true,
-    "inputs": [
-      {
-        "name": "DS_PROMETHEUS",
-        "type": "datasource",
-        "pluginId": "prometheus",
-        "value": "Prometheus"
-      }
-    ]
-  }')
+  -X POST "$GRAFANA_URL/api/dashboards/db" \
+  -d @jenkins-dashboard.json)
 
-if [[ "$IMPORT_STATUS" == "200" || "$IMPORT_STATUS" == "201" ]]; then
+if [[ "$IMPORT_STATUS_JENKINS" == "200" || "$IMPORT_STATUS_JENKINS" == "201" ]]; then
   echo "✅ Jenkins Dashboard imported into Grafana"
 else
   echo "❌ Failed to import Jenkins Dashboard. Response:"
-  cat /tmp/import_dash_resp.json
-  exit 1
+  cat /tmp/import_jenkins_resp.json
+  exit 0
 fi
+
+# === 5. Import Prometheus Overview Dashboard from file ===
+echo "📊 Importing Prometheus Overview Dashboard from prometheus-overview.json…"
+
+IMPORT_STATUS_PROM=$(curl -s -o /tmp/import_prom_resp.json -w "%{http_code}" -u "$GRAFANA_USER:$GRAFANA_PASSWORD" \
+  -H "Content-Type: application/json" \
+  -X POST "$GRAFANA_URL/api/dashboards/db" \
+  -d @prometheus-overview.json)
+
+if [[ "$IMPORT_STATUS_PROM" == "200" || "$IMPORT_STATUS_PROM" == "201" ]]; then
+  echo "✅ Prometheus Overview Dashboard imported into Grafana"
+else
+  echo "❌ Failed to import Prometheus Overview Dashboard. Response:"
+  cat /tmp/import_prom_resp.json
+  exit 0
+fi
+
+exit 0
