@@ -8,6 +8,7 @@
     - name: Setup cAdvisor and Jenkins
       script: prometheus/setup_cadvisor_and_jenkins.sh
       become: true  
+      
     - name: Setup Node Exporter
       script: prometheus/setup_node_exporter.sh
       become: true  
