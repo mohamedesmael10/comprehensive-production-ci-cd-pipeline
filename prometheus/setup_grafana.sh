@@ -7,28 +7,34 @@ GRAFANA_USER="admin"
 GRAFANA_PASSWORD="admin"
 GRAFANA_URL="http://localhost:3000"
 
-# === Locate script dir ===
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# === Locate dashboard files ===
+JENKINS_DASHBOARD_JSON="../prometheus/jenkins-dashboard.json"
+PROMETHEUS_OVERVIEW_JSON="../prometheus/prometheus-overview.json"
 
-JENKINS_DASHBOARD_JSON="$SCRIPT_DIR/jenkins-dashboard.json"
-PROMETHEUS_OVERVIEW_JSON="$SCRIPT_DIR/prometheus-overview.json"
+# === 1. Check if Grafana is installed ===
+if systemctl is-active --quiet grafana-server; then
+    echo "✅ Grafana is already installed and running."
+else
+    echo "📦 Installing Grafana..."
 
-# === 1. Install Grafana ===
-echo "📦 Installing Grafana..."
+    # Add Grafana APT repo if not already present
+    if ! grep -q grafana /etc/apt/sources.list /etc/apt/sources.list.d/*; then
+        sudo apt-get install -y software-properties-common
+        sudo add-apt-repository "deb https://packages.grafana.com/oss/deb stable main" -y
+        wget -q -O - https://packages.grafana.com/gpg.key | sudo apt-key add -
+    else
+        echo "ℹ️ Grafana APT repo already configured."
+    fi
 
-# Add Grafana APT repo
-sudo apt-get install -y software-properties-common
-sudo add-apt-repository "deb https://packages.grafana.com/oss/deb stable main" -y
-wget -q -O - https://packages.grafana.com/gpg.key | sudo apt-key add -
+    # Install Grafana
+    sudo apt-get update
+    sudo apt-get install -y grafana
 
-# Install Grafana
-sudo apt-get update
-sudo apt-get install -y grafana
-
-# Start Grafana service
-sudo systemctl daemon-reexec
-sudo systemctl enable --now grafana-server
-echo "✅ Grafana installed and running at http://localhost:3000"
+    # Start Grafana service
+    sudo systemctl daemon-reexec
+    sudo systemctl enable --now grafana-server
+    echo "✅ Grafana installed and running at http://localhost:3000"
+fi
 
 # === 2. Wait for Grafana API ===
 echo "⏳ Waiting for Grafana API to become ready…"
