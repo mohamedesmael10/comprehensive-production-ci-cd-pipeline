@@ -46,5 +46,18 @@ pipeline {
                 }
             }
         }
+
+        stage("Deploy Monitoring Stack") {
+            agent {
+                label "jenkins-agent"
+            }
+            steps {
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    sh """
+                    ansible-playbook Ansible/deploy_monitoring.yaml
+                    """
+                }
+            }
+        }
     }
 }
