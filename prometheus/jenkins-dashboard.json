@@ -73,7 +73,7 @@
         "gridPos": { "x": 6, "y": 4, "w": 6, "h": 6 }
       },
       {
-        "type": "time_series",
+        "type": "graph",
         "title": "Builds in Progress",
         "datasource": "$DS_PROMETHEUS",
         "targets": [
@@ -85,7 +85,7 @@
         "gridPos": { "x": 12, "y": 4, "w": 12, "h": 9 }
       },
       {
-        "type": "time_series",
+        "type": "graph",
         "title": "Build Duration (seconds)",
         "datasource": "$DS_PROMETHEUS",
         "targets": [
@@ -97,7 +97,7 @@
         "gridPos": { "x": 0, "y": 10, "w": 12, "h": 9 }
       },
       {
-        "type": "time_series",
+        "type": "graph",
         "title": "Failed Builds",
         "datasource": "$DS_PROMETHEUS",
         "targets": [
