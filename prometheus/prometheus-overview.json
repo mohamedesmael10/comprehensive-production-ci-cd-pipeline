@@ -69,7 +69,7 @@
         "gridPos": { "x": 12, "y": 0, "w": 6, "h": 4 }
       },
       {
-        "type": "time_series",
+        "type": "graph",
         "title": "Active Time Series",
         "datasource": "$prometheus",
         "targets": [
@@ -81,7 +81,7 @@
         "gridPos": { "x": 0, "y": 4, "w": 12, "h": 6 }
       },
       {
-        "type": "time_series",
+        "type": "graph",
         "title": "Ingested Samples",
         "datasource": "$prometheus",
         "targets": [
@@ -93,7 +93,7 @@
         "gridPos": { "x": 12, "y": 4, "w": 12, "h": 6 }
       },
       {
-        "type": "time_series",
+        "type": "graph",
         "title": "Checkpoint Duration",
         "datasource": "$prometheus",
         "targets": [
@@ -105,7 +105,7 @@
         "gridPos": { "x": 0, "y": 10, "w": 12, "h": 6 }
       },
       {
-        "type": "time_series",
+        "type": "graph",
         "title": "Notifications Queue Length",
         "datasource": "$prometheus",
         "targets": [
