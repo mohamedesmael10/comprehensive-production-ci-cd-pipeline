@@ -3,6 +3,9 @@
   hosts: localhost
   connection: local
   become: true  
+  become_method: sudo
+  become_user: jenkins  
+  gather_facts: true  
 
   tasks:
     - name: Ensure cAdvisor and Jenkins setup script is executable
