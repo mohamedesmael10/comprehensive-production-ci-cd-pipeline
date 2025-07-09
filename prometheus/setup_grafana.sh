@@ -5,8 +5,8 @@ set -e
 # === 0. Hardcoded Credentials ===
 GRAFANA_USER="admin"
 GRAFANA_PASSWORD="admin"
-
 JENKINS_HOST="mohamedesmael.work.gd"
+GRAFANA_URL="http://localhost:3000"
 
 # === 1. Install Grafana ===
 echo "📦 Installing Grafana..."
@@ -25,36 +25,45 @@ sudo systemctl daemon-reexec
 sudo systemctl enable --now grafana-server
 echo "✅ Grafana installed and running at http://localhost:3000"
 
-# === 2. Connect Grafana to Prometheus ===
-echo "🔌 Connecting Grafana to Prometheus..."
+# === 2. Wait for Grafana API ===
+echo "⏳ Waiting for Grafana API to become ready…"
+timeout=60
+while ! curl -sf "$GRAFANA_URL/login" > /dev/null; do
+    sleep 2
+    timeout=$((timeout-2))
+    if [ $timeout -le 0 ]; then
+        echo "❌ Grafana API did not become ready within 60 seconds"
+        exit 1
+    fi
+done
+echo "✅ Grafana API is ready"
 
-GRAFANA_URL="http://localhost:3000"
+# === 3. Connect Grafana to Prometheus ===
+echo "🔌 Adding Prometheus as a Grafana data source…"
 
-EXISTING=$(curl -s -u "$GRAFANA_USER:$GRAFANA_PASSWORD" "$GRAFANA_URL/api/datasources" | grep -c '"name":"Prometheus"')
+ADD_DS_STATUS=$(curl -s -o /tmp/add_ds_resp.json -w "%{http_code}" -u "$GRAFANA_USER:$GRAFANA_PASSWORD" \
+  -H "Content-Type: application/json" \
+  -X POST "$GRAFANA_URL/api/datasources" \
+  -d '{
+    "name": "Prometheus",
+    "type": "prometheus",
+    "url": "http://localhost:9090",
+    "access": "proxy",
+    "basicAuth": false
+  }')
 
-if [ "$EXISTING" -eq 0 ]; then
-  echo "➕ Adding Prometheus data source to Grafana..."
-
-  curl -s -u "$GRAFANA_USER:$GRAFANA_PASSWORD" \
-    -H "Content-Type: application/json" \
-    -X POST "$GRAFANA_URL/api/datasources" \
-    -d '{
-      "name": "Prometheus",
-      "type": "prometheus",
-      "url": "http://localhost:9090",
-      "access": "proxy",
-      "basicAuth": false
-    }'
-
+if [[ "$ADD_DS_STATUS" == "200" || "$ADD_DS_STATUS" == "201" ]]; then
   echo "✅ Prometheus added as a Grafana data source"
 else
-  echo "✅ Prometheus data source already exists in Grafana"
+  echo "❌ Failed to add Prometheus data source. Response:"
+  cat /tmp/add_ds_resp.json
+  exit 1
 fi
 
-# === 3. Import Jenkins Dashboard ===
-echo "📊 Importing Jenkins Dashboard..."
+# === 4. Import Jenkins Dashboard ===
+echo "📊 Importing Jenkins Dashboard…"
 
-curl -s -u "$GRAFANA_USER:$GRAFANA_PASSWORD" \
+IMPORT_STATUS=$(curl -s -o /tmp/import_dash_resp.json -w "%{http_code}" -u "$GRAFANA_USER:$GRAFANA_PASSWORD" \
   -H "Content-Type: application/json" \
   -X POST "$GRAFANA_URL/api/dashboards/import" \
   -d '{
@@ -70,6 +79,12 @@ curl -s -u "$GRAFANA_USER:$GRAFANA_PASSWORD" \
         "value": "Prometheus"
       }
     ]
-  }' > /dev/null
+  }')
 
-echo "✅ Jenkins Dashboard imported into Grafana"
+if [[ "$IMPORT_STATUS" == "200" || "$IMPORT_STATUS" == "201" ]]; then
+  echo "✅ Jenkins Dashboard imported into Grafana"
+else
+  echo "❌ Failed to import Jenkins Dashboard. Response:"
+  cat /tmp/import_dash_resp.json
+  exit 1
+fi
