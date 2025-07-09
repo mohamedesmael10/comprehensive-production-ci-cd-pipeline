@@ -1,16 +1,39 @@
 #!/bin/bash
 
-# === 1. Run cAdvisor Container ===
-echo "Starting cAdvisor container..."
-docker run \
-  --volume=/:/rootfs:ro \
-  --volume=/var/run:/var/run:ro \
-  --volume=/sys:/sys:ro \
-  --volume=/var/lib/docker/:/var/lib/docker:ro \
-  --publish=8081:8080 \
-  --detach=true \
-  --name=cadvisor \
-  gcr.io/cadvisor/cadvisor:latest
+set -e
+
+echo "🚀 Checking cAdvisor container…"
+
+if docker ps --format '{{.Names}}' | grep -q "^cadvisor$"; then
+    echo "✅ cAdvisor container is already running."
+elif docker ps -a --format '{{.Names}}' | grep -q "^cadvisor$"; then
+    echo "♻️ Removing stopped cAdvisor container…"
+    docker rm cadvisor
+    echo "▶️ Starting cAdvisor container…"
+    docker run \
+      --volume=/:/rootfs:ro \
+      --volume=/var/run:/var/run:ro \
+      --volume=/sys:/sys:ro \
+      --volume=/var/lib/docker/:/var/lib/docker:ro \
+      --publish=8081:8080 \
+      --detach=true \
+      --name=cadvisor \
+      gcr.io/cadvisor/cadvisor:latest
+    echo "✅ cAdvisor started."
+else
+    echo "▶️ Starting cAdvisor container…"
+    docker run \
+      --volume=/:/rootfs:ro \
+      --volume=/var/run:/var/run:ro \
+      --volume=/sys:/sys:ro \
+      --volume=/var/lib/docker/:/var/lib/docker:ro \
+      --publish=8081:8080 \
+      --detach=true \
+      --name=cadvisor \
+      gcr.io/cadvisor/cadvisor:latest
+    echo "✅ cAdvisor started."
+fi
+
 
 # === 2. Add scrape configs to Prometheus ===
 PROM_CONFIG="/etc/prometheus/prometheus.yml"
