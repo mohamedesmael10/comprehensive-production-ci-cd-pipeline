@@ -110,5 +110,7 @@
       }
     ]
   },
-  "overwrite": true
+  "overwrite": true,
+  "folderId": 0,
+  "message": "Imported by script"
 }
