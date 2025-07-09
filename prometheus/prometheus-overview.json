@@ -118,5 +118,7 @@
       }
     ]
   },
-  "overwrite": true
+  "folderId": 0,
+  "overwrite": true,
+  "message": "Imported by setup script"
 }
