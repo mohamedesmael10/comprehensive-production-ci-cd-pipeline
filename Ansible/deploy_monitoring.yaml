@@ -3,13 +3,31 @@
   hosts: localhost
   connection: local
   become: true  
-  
+
   tasks:
+    - name: Ensure cAdvisor and Jenkins setup script is executable
+      file:
+        path: prometheus/setup_cadvisor_and_jenkins.sh
+        mode: '0755'
+      become: true
+
+    - name: Ensure Node Exporter setup script is executable
+      file:
+        path: prometheus/setup_node_exporter.sh
+        mode: '0755'
+      become: true
+
+    - name: Ensure Grafana setup script is executable
+      file:
+        path: prometheus/setup_grafana.sh
+        mode: '0755'
+      become: true
+
     - name: Setup cAdvisor and Jenkins
       script: prometheus/setup_cadvisor_and_jenkins.sh
       become: true
       ignore_errors: yes  
-      
+
     - name: Setup Node Exporter
       script: prometheus/setup_node_exporter.sh
       become: true
@@ -19,4 +37,3 @@
       script: prometheus/setup_grafana.sh
       become: true
       ignore_errors: yes
-
