@@ -2,16 +2,17 @@
 - name: Setup monitoring stack on local machine
   hosts: localhost
   connection: local
-  become: true
-
+  become: true  
+  
   tasks:
     - name: Setup cAdvisor and Jenkins
       script: prometheus/setup_cadvisor_and_jenkins.sh
-
+      become: true  
     - name: Setup Node Exporter
       script: prometheus/setup_node_exporter.sh
+      become: true  
 
     - name: Setup Grafana
       script: prometheus/setup_grafana.sh
+      become: true  
 
-    
