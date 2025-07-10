@@ -16,7 +16,9 @@ pipeline {
 
         stage("Checkout from SCM") {
             steps {
-                git branch: 'main', credentialsId: 'github', url: 'https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline'
+                git branch: 'main',
+                    credentialsId: 'github',
+                    url: 'https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline'
             }
         }
 
@@ -40,9 +42,8 @@ pipeline {
                 git add argocd/deployment.yaml
                 git commit -m "Updated Deployment Manifest"
                 """
-
-                withCredentials([gitUsernamePassword(credentialsId: 'github', gitToolName: 'Default')]) {
-                    sh 'git push https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline main'
+                withCredentials([usernamePassword(credentialsId: 'github', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
+                    sh 'git push https://${GIT_USER}:${GIT_PASS}@github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline main'
                 }
             }
         }
@@ -58,6 +59,38 @@ pipeline {
                     """
                 }
             }
+        }
+    }
+
+    post {
+        failure {
+            mail(
+                subject: "${env.JOB_NAME} - Build #${env.BUILD_NUMBER} - Failed",
+                body: """
+The deployment pipeline failed.
+
+You can view the build details here:
+${env.BUILD_URL}
+
+Please check the Jenkins console output for more information.
+""",
+                to: "mohamed.2714104@gmail.com"
+            )
+        }
+
+        success {
+            mail(
+                subject: "${env.JOB_NAME} - Build #${env.BUILD_NUMBER} - Successful",
+                body: """
+The deployment pipeline completed successfully.
+
+You can view the build details here:
+${env.BUILD_URL}
+
+You can proceed with the next steps.
+""",
+                to: "mohamed.2714104@gmail.com"
+            )
         }
     }
 }
