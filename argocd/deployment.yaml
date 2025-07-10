@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: production-ci-cd-pipeline
-          image: mohamedesmael/comprehensive-production-ci-cd-pipeline:1.0.0-42
+          image: mohamedesmael/comprehensive-production-ci-cd-pipeline:1.0.0-43
           resources:
             limits:
               memory: "256Mi"
