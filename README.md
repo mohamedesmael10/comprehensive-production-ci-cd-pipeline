@@ -26,8 +26,8 @@ I configured Apache HTTP Server as a reverse proxy for Jenkins and SonarQube, us
 
 ### Configuration Links
 
-* Apache Config for Jenkins: link-to-config
-* Apache Config for SonarQube: link-to-config
+* Apache Config for Jenkins: [link-to-config](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/apache_configs/jenkins.conf)
+* Apache Config for SonarQube: [link-to-config](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/apache_configs/sonarqube.conf)
 
 ### Example Screenshot
 
