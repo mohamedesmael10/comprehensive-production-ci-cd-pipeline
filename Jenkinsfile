@@ -4,17 +4,17 @@ pipeline {
     }
 
     environment {
-        RELEASE = "1.0.0"
-        APP_NAME = "comprehensive-production-ci-cd-pipeline"
-        DOCKER_USER = "mohamedesmael"
-        DOCKER_PASS = 'dockerhub'
-        IMAGE_NAME = "${DOCKER_USER}/${APP_NAME}"
-        IMAGE_TAG = "${RELEASE}-${BUILD_NUMBER}"
+        RELEASE           = "1.0.0"
+        APP_NAME          = "comprehensive-production-ci-cd-pipeline"
+        DOCKER_USER       = "mohamedesmael"
+        DOCKER_PASS       = 'dockerhub'
+        IMAGE_NAME        = "${DOCKER_USER}/${APP_NAME}"
+        IMAGE_TAG         = "${RELEASE}-${BUILD_NUMBER}"
         JENKINS_API_TOKEN = credentials("JENKINS_API_TOKEN_2")
     }
 
     tools {
-        jdk 'Java17'
+        jdk   'Java17'
         maven 'Maven3'
     }
 
@@ -63,14 +63,12 @@ pipeline {
             }
         }
 
-        stage("Containerize and Push Image") {
+        stage("Build Docker Image") {
             steps {
                 script {
-                    docker.withRegistry('', DOCKER_PASS) {
-                        def docker_image = docker.build("${IMAGE_NAME}")
-                        docker_image.push("${IMAGE_TAG}")
-                        docker_image.push('latest')
-                    }
+                    // build and tag
+                    docker.build("${IMAGE_NAME}:${IMAGE_TAG}")
+                    docker.tag("${IMAGE_NAME}:${IMAGE_TAG}", "${IMAGE_NAME}:latest")
                 }
             }
         }
@@ -80,10 +78,22 @@ pipeline {
                 script {
                     sh '''
                         docker run -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image \
-                        mohamedesmael/comprehensive-production-ci-cd-pipeline:latest \
-                        --no-progress --scanners vuln --exit-code 0 --severity HIGH,CRITICAL --format table \
-                        --timeout 30m
+                          ${IMAGE_NAME}:latest \
+                          --no-progress --scanners vuln \
+                          --exit-code 0 --severity HIGH,CRITICAL --format table \
+                          --timeout 30m
                     '''
+                }
+            }
+        }
+
+        stage("Push Docker Image") {
+            steps {
+                script {
+                    docker.withRegistry('', DOCKER_PASS) {
+                        docker.image("${IMAGE_NAME}:${IMAGE_TAG}").push()
+                        docker.image("${IMAGE_NAME}:latest").push()
+                    }
                 }
             }
         }
@@ -106,8 +116,8 @@ pipeline {
                     echo "Triggering CD pipeline with IMAGE_TAG=${IMAGE_TAG}"
                     def result = sh(script: """
                         curl -v -u "esmael:${JENKINS_API_TOKEN}" \
-                        -d "IMAGE_TAG=${IMAGE_TAG}" \
-                        "https://mohamedesmael.work.gd/job/git-comprehensive-pipeline/buildWithParameters?token=gitops-token"
+                          -d "IMAGE_TAG=${IMAGE_TAG}" \
+                          "https://mohamedesmael.work.gd/job/git-comprehensive-pipeline/buildWithParameters?token=gitops-token"
                     """, returnStatus: true)
 
                     if (result != 0) {
@@ -124,7 +134,8 @@ pipeline {
         failure {
             mail(
                 subject: "${env.JOB_NAME} - Build #${env.BUILD_NUMBER} - Failed",
-                body: """The build failed.
+                body: """
+The build failed.
 
 You can view the build details here:
 ${env.BUILD_URL}
@@ -138,7 +149,8 @@ Please check the Jenkins console output for more information.
         success {
             mail(
                 subject: "${env.JOB_NAME} - Build #${env.BUILD_NUMBER} - Successful",
-                body: """The build was successful.
+                body: """
+The build was successful.
 
 You can view the build details here:
 ${env.BUILD_URL}
