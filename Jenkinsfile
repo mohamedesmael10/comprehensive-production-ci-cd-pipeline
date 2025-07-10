@@ -32,7 +32,6 @@ pipeline {
         stage("Trivy File Scan") {
             steps {
                 sh '''
-                  # `filesystem` (or `fs`) expects flags first, then the path at the end
                   trivy filesystem \
                     --no-progress \
                     --exit-code 0 \
