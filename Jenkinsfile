@@ -1,7 +1,5 @@
 pipeline {
-    agent {
-        label "jenkins-agent"
-    }
+    agent { label "jenkins-agent" }
 
     environment {
         RELEASE           = "1.0.0"
@@ -20,9 +18,7 @@ pipeline {
 
     stages {
         stage("Initialize Workspace") {
-            steps {
-                cleanWs()
-            }
+            steps { cleanWs() }
         }
 
         stage("Fetch Source Code") {
@@ -33,16 +29,27 @@ pipeline {
             }
         }
 
-        stage("Compile and Package Application") {
+        stage("Trivy File Scan") {
             steps {
-                sh "mvn clean package"
+                sh '''
+                  trivy fs . \
+                    --no-progress \
+                    --exit-code 0 \
+                    --severity HIGH,CRITICAL \
+                    --format table \
+                    --timeout 30m \
+                    --exclude-dir target \
+                    --exclude-dir .git
+                '''
             }
         }
 
+        stage("Compile and Package Application") {
+            steps { sh "mvn clean package" }
+        }
+
         stage("Execute Unit Tests") {
-            steps {
-                sh "mvn test"
-            }
+            steps { sh "mvn test" }
         }
 
         stage("Run Static Code Analysis") {
@@ -66,24 +73,23 @@ pipeline {
         stage("Build Docker Image") {
             steps {
                 script {
-                    // build and tag
                     docker.build("${IMAGE_NAME}:${IMAGE_TAG}")
                     docker.tag("${IMAGE_NAME}:${IMAGE_TAG}", "${IMAGE_NAME}:latest")
                 }
             }
         }
 
-        stage("Trivy Scan") {
+        stage("Trivy Image Scan") {
             steps {
-                script {
-                    sh '''
-                        docker run -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image \
-                          ${IMAGE_NAME}:latest \
-                          --no-progress --scanners vuln \
-                          --exit-code 0 --severity HIGH,CRITICAL --format table \
-                          --timeout 30m
-                    '''
-                }
+                sh '''
+                  trivy image ${IMAGE_NAME}:latest \
+                    --no-progress \
+                    --exit-code 0 \
+                    --scanners vuln \
+                    --severity HIGH,CRITICAL \
+                    --format table \
+                    --timeout 30m
+                '''
             }
         }
 
@@ -119,7 +125,6 @@ pipeline {
                           -d "IMAGE_TAG=${IMAGE_TAG}" \
                           "https://mohamedesmael.work.gd/job/git-comprehensive-pipeline/buildWithParameters?token=gitops-token"
                     """, returnStatus: true)
-
                     if (result != 0) {
                         error "Failed to trigger the CD pipeline"
                     } else {
