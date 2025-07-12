@@ -17,10 +17,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Cleanup workspace
-        run: git clean -fdx
+        run: |
+          if [ -d .git ]; then
+            git clean -fdx
+          else
+            echo "No .git directory found, skipping cleanup."
+          fi
 
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+          ref: git-actions-pipeline
 
       - name: Run setup-apache.sh over SSH
         uses: appleboy/ssh-action@v0.1.8
