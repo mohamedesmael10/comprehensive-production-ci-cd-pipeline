@@ -18,6 +18,16 @@ jobs:
     name: Provision Apache on Server
     runs-on: ubuntu-latest
     steps:
+      - name: Cleanup workspace
+        run: |
+          git clean -fdx
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
       - name: Run setup-apache.sh over SSH
         uses: appleboy/ssh-action@v0.1.8
         with:
@@ -36,8 +46,15 @@ jobs:
     needs: setup-apache
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Cleanup workspace
+        run: |
+          git clean -fdx
+
+      - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
       - name: Trivy File Scan
         uses: aquasecurity/trivy-action@v0
@@ -83,8 +100,15 @@ jobs:
     needs: build-and-scan
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Cleanup workspace
+        run: |
+          git clean -fdx
+
+      - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
@@ -119,6 +143,16 @@ jobs:
     needs: docker
     runs-on: ubuntu-latest
     steps:
+      - name: Cleanup workspace
+        run: |
+          git clean -fdx
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
       - name: Trigger CD via GitHub API
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
@@ -127,4 +161,4 @@ jobs:
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer $GITHUB_TOKEN" \
             https://api.github.com/repos/mohamedesmael10/comprehensive-production-ci-cd-pipeline/git-actions-pipeline/actions/workflows/cd-pipeline.yml/dispatches \
-            -d '{"ref":"main","inputs":{"image_tag":"'"${IMAGE_TAG}"'"}}'
+            -d '{"ref":"git-actions-pipeline","inputs":{"image_tag":"'"${IMAGE_TAG}"'"}}'
