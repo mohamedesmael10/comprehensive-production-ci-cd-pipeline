@@ -20,11 +20,13 @@ if command -v ufw >/dev/null 2>&1; then
   sudo ufw allow 443/tcp
 fi
 
-if ! systemctl is-active --quiet apache2; then
-  sudo systemctl enable --now apache2
+if pgrep apache2 >/dev/null 2>&1; then
+    echo "Apache already running, restarting…"
+    sudo apache2ctl restart
+else
+    echo "Starting Apache…"
+    sudo apache2ctl start
 fi
-
-sudo systemctl restart apache2
 
 echo "Done"
 
