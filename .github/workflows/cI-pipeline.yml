@@ -7,10 +7,6 @@ on:
         description: 'Release version'
         required: false
         default: '1.0.0'
-      run_cd:
-        description: 'Trigger CD after Docker?'
-        required: false
-        default: 'false'
 
 env:
   APP_NAME: comprehensive-production-ci-cd-pipeline-github-actions
@@ -35,9 +31,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
-            curl -fsSL \
-              https://raw.githubusercontent.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/git-actions-pipeline/apache_configs/setup-apache.sh \
-              -o /tmp/setup-apache.sh
+            curl -fsSL https://raw.githubusercontent.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/git-actions-pipeline/apache_configs/setup-apache.sh -o /tmp/setup-apache.sh
             chmod +x /tmp/setup-apache.sh
             sudo /tmp/setup-apache.sh
 
