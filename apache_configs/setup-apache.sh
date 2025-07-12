@@ -20,6 +20,10 @@ if command -v ufw >/dev/null 2>&1; then
   sudo ufw allow 443/tcp
 fi
 
+if ! systemctl is-active --quiet apache2; then
+  sudo systemctl enable --now apache2
+fi
+
 sudo systemctl reload apache2
 
 echo "Done"
