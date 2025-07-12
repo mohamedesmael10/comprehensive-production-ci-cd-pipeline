@@ -35,7 +35,7 @@ jobs:
         run: |
           curl -fsSL https://raw.githubusercontent.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/git-actions-pipeline/apache_configs/setup-apache.sh -o /tmp/setup-apache.sh
           chmod +x /tmp/setup-apache.sh
-          sudo /tmp/setup-apache.sh
+          sudo --preserve-env=DNS_EXIT_API_KEY /tmp/setup-apache.sh
         env:
           DNS_EXIT_API_KEY: ${{ secrets.DNS_EXIT_API_KEY }}
 
