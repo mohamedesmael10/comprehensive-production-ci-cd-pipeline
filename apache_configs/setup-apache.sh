@@ -27,3 +27,52 @@ fi
 sudo systemctl restart apache2
 
 echo "Done"
+
+echo ""
+echo "=== Adding Dynamic DNS update jobs to crontab ==="
+
+# List of hosts to update
+hosts=(
+  "mohamedesmael.work.gd"
+  "mohamedesmaelargocd.work.gd"
+  "mohamedesmaelsonarqube.work.gd"
+)
+
+if [ -z "$DNS_EXIT_API_KEY" ]; then
+  echo "❌ Error: DNS_EXIT_API_KEY environment variable not set"
+  exit 1
+fi
+
+api_key="$DNS_EXIT_API_KEY"
+logfile="/var/log/ipupdate.log"
+
+# Get the current crontab
+existing_crontab=$(crontab -l 2>/dev/null || true)
+
+updated_crontab="$existing_crontab"
+
+for host in "${hosts[@]}"; do
+    command="curl https://api.dnsexit.com/dns/ud/?apikey=$api_key -d host=$host"
+    if [ -d "/var/log" ]; then
+        command="$command >> $logfile"
+    fi
+
+    if grep -qF "$command" <<< "$existing_crontab"; then
+        echo "Scheduled job for $host already exists in crontab."
+    else
+        updated_crontab="${updated_crontab}
+*/12 * * * * $command"
+        echo "Added scheduled job for $host."
+    fi
+done
+
+# Install the updated crontab
+echo "$updated_crontab" | crontab -
+
+echo ""
+echo "=== Crontab jobs configured. Current curl jobs: ==="
+crontab -l | grep curl || echo "No curl jobs found"
+
+echo ""
+echo "✅ All Done."
+
