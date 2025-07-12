@@ -9,7 +9,7 @@ Repository: [GitHub Link](https://github.com/mohamedesmael10/comprehensive-produ
 
 ## Architecture Diagram
 
-![Architecture Diagram](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/Screenshots/0.gif)
+![Architecture Diagram](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/0.gif)
 
 ## Table of Contents
 
@@ -36,9 +36,9 @@ jenkins-job-run CI-pipeline
 
 I configured Apache HTTP Server as a reverse proxy for Jenkins and SonarQube, using domains registered from freedomain.one. This setup secures access to both services via their respective domains.
 
-!Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/Screenshots/21.png)
+!Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/21.png)
 
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/Screenshots/6.png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/6.png)
 
 
 ### Configuration Links
@@ -64,7 +64,7 @@ Both certificates are integrated into Apache VirtualHost configurations to secur
 I created a dedicated SSH build node for Jenkins. I generated SSH keys and configured them for passwordless authentication, enabling Jenkins to run builds securely and efficiently on this node.
 
 
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/Screenshots/26.png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/26.png)
 
 
 ---
@@ -73,17 +73,17 @@ I created a dedicated SSH build node for Jenkins. I generated SSH keys and confi
 
 I set up SonarQube webhooks to notify Jenkins of analysis results, enabling automated quality gate enforcement in pipelines.
 
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/Screenshots/13.png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/13.png)
 
 
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/Screenshots/7.png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/7.png)
 
 
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/Screenshots/18.png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/18.png)
 
 
 
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/Screenshots/34.png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/34.png)
 
 
 ---
@@ -92,10 +92,10 @@ I set up SonarQube webhooks to notify Jenkins of analysis results, enabling auto
 
 The pipeline builds and deploys a simple Java 17+ Maven application, which serves as the target workload. It is a clean Maven project, tested and packaged as part of the CI process.
 
-![Architecture Diagram](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/Screenshots/11.png)
+![Architecture Diagram](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/11.png)
 
 
-![Architecture Diagram](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/Screenshots/14.png)
+![Architecture Diagram](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/14.png)
 
 
 ---
@@ -114,7 +114,7 @@ The CI pipeline is defined in `Jenkinsfile` and runs on a `jenkins-agent` node. 
 
 ### Stages
 
-![Architecture Diagram](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/Screenshots/39.png)
+![Architecture Diagram](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/39.png)
 
 
 | Stage                    | Description                                            |
@@ -134,10 +134,10 @@ The CI pipeline is defined in `Jenkinsfile` and runs on a `jenkins-agent` node. 
 
 Emails are sent on success and failure.
 
-!Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/Screenshots/10.png)
+!Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/10.png)
 
 
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/Screenshots/47.jpg)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/47.jpg)
 
 
 ---
@@ -150,7 +150,7 @@ Triggered remotely by the CI pipeline via `gitops-token`. It updates deployment 
 
 ### Stages
 
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/Screenshots/38.png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/38.png)
 
 
 | Stage                   | Description                                         |
@@ -165,7 +165,7 @@ Triggered remotely by the CI pipeline via `gitops-token`. It updates deployment 
 
 Emails are sent on success and failure.
 
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/Screenshots/49.jpg)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/49.jpg)
 
 ---
 
@@ -198,9 +198,9 @@ Ansible playbooks automate the deployment of the monitoring stack:
 * cAdvisor & Jenkins target: Installed and added to Prometheus.
 * Node Exporter: Installed and configured for Prometheus.
 * Grafana: Installed and dashboards imported (`jenkins-dashboard.json`, `prometheus-overview.json`).
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/Screenshots/16.png)
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/Screenshots/31.png)
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/Screenshots/22.png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/16.png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/31.png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/22.png)
 
 
 ---
@@ -212,37 +212,37 @@ Ansible playbooks automate the deployment of the monitoring stack:
 Prometheus collects metrics from Jenkins, cAdvisor, and Node Exporter.
 Grafana visualizes metrics with preconfigured dashboards.
 
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/Screenshots/19.png)
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/Screenshots/29.png)
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/Screenshots/09.png)
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/Screenshots/23.png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/19.png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/29.png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/09.png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/23.png)
 
 
 
 ## CI/CD Workflow Diagram
 
 ```
-[!Workflow Diagram 1](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/Screenshots/01.png)
+[!Workflow Diagram 1](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/01.png)
 
-[!Workflow Diagram 1](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/Screenshots/02.png)
+[!Workflow Diagram 1](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/02.png)
 
 
 
 ```
 ## Additional Shots
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/Screenshots/40.png)
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/Screenshots/41.png)
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/Screenshots/43.png)
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/Screenshots/45.png)
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/Screenshots/35.png)
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/Screenshots/36.png)
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/Screenshots/17.png)
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/Screenshots/25.png)
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/Screenshots/12.png)
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/Screenshots/24.png)
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/Screenshots/28.png)
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/Screenshots/42.png)
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/Screenshots/44.png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/40.png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/41.png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/43.png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/45.png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/35.png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/36.png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/17.png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/25.png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/12.png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/24.png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/28.png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/42.png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/44.png)
 
 
 
