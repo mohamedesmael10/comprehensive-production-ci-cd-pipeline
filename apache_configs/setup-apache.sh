@@ -22,11 +22,12 @@ fi
 
 if pgrep apache2 >/dev/null 2>&1; then
     echo "Apache already running, restarting…"
-    sudo apache2ctl restart
+    sudo systemctl restart apache2
 else
     echo "Starting Apache…"
-    sudo apache2ctl start
+    sudo systemctl start apache2
 fi
+
 
 echo "Done"
 
