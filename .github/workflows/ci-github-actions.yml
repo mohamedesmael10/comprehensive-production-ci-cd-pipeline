@@ -1,0 +1,107 @@
+name: CI Pipeline 
+
+on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: 'Release version'
+        required: false
+        default: '1.0.0'
+
+env:
+  APP_NAME: comprehensive-production-ci-cd-pipeline
+  IMAGE_NAME: ${{ secrets.DOCKER_USER }}/${{ env.APP_NAME }}
+  IMAGE_TAG: ${{ github.event.inputs.release }}-${{ github.run_number }}
+
+jobs:
+  build-and-scan:
+    name: Build & Static Scans
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Trivy File Scan
+        uses: aquasecurity/trivy-action@v0
+        with:
+          scan-type: fs
+          scan-path: '.'
+          exit-code: 0
+          severity: HIGH,CRITICAL
+          skip-dirs: target,.git
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Compile & Package
+        run: mvn clean package
+
+      - name: Execute Unit Tests
+        run: mvn test
+
+      - name: SonarQube Analysis
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          projectBaseDir: .
+
+      - name: Enforce Quality Gate (simulated)
+        run: |
+          echo "Waiting 5s…"
+          sleep 5
+          echo "Assuming Quality Gate passed."
+
+  docker:
+    name: Build, Scan & Push Image
+    needs: build-and-scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_PASS }}
+
+      - name: Build & Tag Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: false
+          tags: |
+            ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+            ${{ env.IMAGE_NAME }}:latest
+
+      - name: Trivy Image Scan
+        uses: aquasecurity/trivy-action@v0
+        with:
+          scan-type: image
+          image-ref: ${{ env.IMAGE_NAME }}:latest
+          exit-code: 0
+          severity: HIGH,CRITICAL
+
+      - name: Push Docker Image
+        run: |
+          docker push ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          docker push ${{ env.IMAGE_NAME }}:latest
+
+  trigger-cd:
+    name: Trigger CD Workflow
+    needs: docker
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger CD via GitHub API
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            https://api.github.com/repos/mohamedesmael10/comprehensive-production-ci-cd-pipeline/actions/workflows/cd-pipeline.yml/dispatches \
+            -d '{"ref":"main","inputs":{"image_tag":"'"${IMAGE_TAG}"'"}}'
