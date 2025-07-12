@@ -7,7 +7,7 @@ sudo apt-get install -y apache2 certbot python3-certbot-apache curl
 
 echo ""
 echo "=== Enabling Apache modules ==="
-sudo a2enmod proxy proxy_http proxy_html ssl rewrite
+sudo a2enmod proxy proxy_http proxy_html ssl rewrite headers
 
 echo ""
 echo "=== Starting Apache temporarily for HTTP (needed for certbot) ==="
@@ -16,12 +16,16 @@ sudo systemctl start apache2
 CONFIG_BASE="https://raw.githubusercontent.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/git-actions-pipeline/apache_configs"
 
 echo ""
-echo "=== Downloading and enabling Apache site configs ==="
-sudo curl -fsSL "$CONFIG_BASE/jenkins.conf"   -o /etc/apache2/sites-available/jenkins.conf
-sudo curl -fsSL "$CONFIG_BASE/sonarqube.conf" -o /etc/apache2/sites-available/sonarqube.conf
+echo "=== Downloading and enabling Apache HTTP site configs (pre-certbot) ==="
+sudo curl -fsSL "$CONFIG_BASE/jenkins-http.conf"   -o /etc/apache2/sites-available/jenkins-http.conf
+sudo curl -fsSL "$CONFIG_BASE/sonarqube-http.conf" -o /etc/apache2/sites-available/sonarqube-http.conf
 
-sudo a2ensite jenkins.conf
-sudo a2ensite sonarqube.conf
+sudo a2ensite jenkins-http.conf
+sudo a2ensite sonarqube-http.conf
+
+echo ""
+echo "=== Reloading Apache with HTTP configs ==="
+sudo systemctl reload apache2
 
 if command -v ufw >/dev/null 2>&1; then
   echo ""
@@ -34,29 +38,41 @@ echo ""
 echo "=== Obtaining SSL certificates (RSA and ECDSA) ==="
 EMAIL="mohamed.2714104@gmail.com"
 
-# ECDSA certs
-sudo certbot --apache -d mohamedesmael.work.gd \
-  --cert-name mohamedesmael-ecdsa --key-type ecdsa --elliptic-curve secp384r1 --non-interactive --agree-tos -m "$EMAIL"
+declare -A hosts_certnames=(
+  ["mohamedesmael.work.gd"]="mohamedesmael"
+  ["mohamedesmaelsonarqube.work.gd"]="sonarqube"
+)
 
-sudo certbot --apache -d mohamedesmaelsonarqube.work.gd \
-  --cert-name sonarqube-ecdsa --key-type ecdsa --elliptic-curve secp384r1 --non-interactive --agree-tos -m "$EMAIL"
+for domain in "${!hosts_certnames[@]}"; do
+    base="${hosts_certnames[$domain]}"
+    echo ""
+    echo "→ Requesting ECDSA cert for $domain"
+    sudo certbot certonly --webroot -w /var/www/html -d "$domain" \
+      --cert-name "${base}-ecdsa" --key-type ecdsa --elliptic-curve secp384r1 \
+      --non-interactive --agree-tos -m "$EMAIL"
 
-# RSA certs
-sudo certbot --apache -d mohamedesmael.work.gd \
-  --cert-name mohamedesmael-rsa --non-interactive --agree-tos -m "$EMAIL"
+    echo ""
+    echo "→ Requesting RSA cert for $domain"
+    sudo certbot certonly --webroot -w /var/www/html -d "$domain" \
+      --cert-name "${base}-rsa" --key-type rsa \
+      --non-interactive --agree-tos -m "$EMAIL"
+done
 
-sudo certbot --apache -d mohamedesmaelsonarqube.work.gd \
-  --cert-name sonarqube-rsa --non-interactive --agree-tos -m "$EMAIL"
+echo ""
+echo "=== Switching Apache configs to SSL ==="
+
+sudo a2dissite jenkins-http.conf
+sudo a2dissite sonarqube-http.conf
+
+sudo curl -fsSL "$CONFIG_BASE/jenkins-ssl.conf"   -o /etc/apache2/sites-available/jenkins-ssl.conf
+sudo curl -fsSL "$CONFIG_BASE/sonarqube-ssl.conf" -o /etc/apache2/sites-available/sonarqube-ssl.conf
+
+sudo a2ensite jenkins-ssl.conf
+sudo a2ensite sonarqube-ssl.conf
 
 echo ""
 echo "=== Restarting Apache cleanly ==="
-if pgrep apache2 >/dev/null 2>&1; then
-    echo "Apache already running, restarting…"
-    sudo systemctl restart apache2
-else
-    echo "Starting Apache…"
-    sudo systemctl start apache2
-fi
+sudo systemctl restart apache2
 
 echo ""
 echo "✅ Apache and SSL setup complete"
