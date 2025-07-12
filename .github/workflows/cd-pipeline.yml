@@ -29,6 +29,10 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y ansible
+      
+      - name: Deploy Monitoring Stack & install
+        run: |
+          ansible-playbook Ansible/deploy_monitoring.yaml
 
       - name: Update Deployment Tag
         run: |
@@ -38,15 +42,11 @@ jobs:
 
       - name: Commit & Push updated manifest
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "mohamedesmael10"
+          git config user.email "mohamed.2714104@gmail.com"
           git add argocd/deployment.yaml
           git commit -m "Update Deployment Manifest → image_tag=${{ github.event.inputs.image_tag }}"
-          git push origin HEAD:main
-
-      - name: Deploy Monitoring Stack
-        run: |
-          ansible-playbook Ansible/deploy_monitoring.yaml
+          git push origin HEAD:git-actions-pipeline
 
       - name: Notify on Success
         if: ${{ success() }}
