@@ -19,7 +19,7 @@ api_key="$DNS_EXIT_API_KEY"
 logfile="/var/log/ipupdate.log"
 
 existing_crontab=$(crontab -l 2>/dev/null || true)
-updated_crontab="$existing_crontab"
+updated_crontab="${existing_crontab:-}"
 
 for host in "${hosts[@]}"; do
     command="curl -s https://api.dnsexit.com/dns/ud/?apikey=$api_key -d host=$host"
@@ -30,8 +30,12 @@ for host in "${hosts[@]}"; do
     if grep -qF "$command" <<< "$existing_crontab"; then
         echo "Scheduled job for $host already exists in crontab."
     else
-        updated_crontab="${updated_crontab}
+        if [ -n "$updated_crontab" ]; then
+            updated_crontab="${updated_crontab}
 */12 * * * * $command"
+        else
+            updated_crontab="*/12 * * * * $command"
+        fi
         echo "Added scheduled job for $host."
     fi
 done
