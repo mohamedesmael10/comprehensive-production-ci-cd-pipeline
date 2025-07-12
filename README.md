@@ -118,19 +118,25 @@ The CI pipeline is defined in `Jenkinsfile` and runs on a `jenkins-agent` node. 
 
 ![Architecture Diagram](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/39.png)
 
+| Stage                         | Description                                                    |
+| ----------------------------- | -------------------------------------------------------------- |
+| Initialize Workspace          | Cleans workspace with `cleanWs()`                              |
+| Fetch Source Code             | Clones GitHub repository                                       |
+| Trivy File Scan               | Scans source tree for vuln. (skips `target/`, `.git`)          |
+| Compile & Package Application | Builds the app with `mvn clean package`                        |
+| Execute Unit Tests            | Runs unit tests via `mvn test`                                 |
+| Run Static Code Analysis      | SonarQube analysis with `mvn sonar:sonar`                      |
+| Enforce Quality Gate          | Waits/enforces SonarQube quality gate (simulated with `sleep`) |
+| Build Docker Image            | Builds and tags Docker image (`${IMAGE_TAG}` and `latest`)     |
+| Trivy Image Scan              | Scans the built Docker image for vulnerabilities               |
+| Push Docker Image             | Pushes both `${IMAGE_TAG}` and `latest` tags to Docker Hub     |
+| Cleanup Artifacts             | Removes local Docker images                                    |
+| Trigger CD Pipeline           | Calls downstream CD pipeline with the new image tag            |
 
-| Stage                    | Description                                            |
-| ------------------------ | ------------------------------------------------------ |
-| Initialize Workspace     | Cleans workspace with `cleanWs()`                      |
-| Fetch Source Code        | Clones GitHub repository                               |
-| Compile & Package        | `mvn clean package`                                    |
-| Execute Unit Tests       | `mvn test`                                             |
-| Run Static Code Analysis | SonarQube analysis with quality gate check             |
-| Build Docker Image       | Builds and tags Docker image                           |
-| Trivy Scan               | Scans Docker image for vulnerabilities                 |
-| Push Docker Image        | Pushes Docker image with both unique and `latest` tags |
-| Cleanup Artifacts        | Removes local Docker images                            |
-| Trigger CD Pipeline      | Calls CD pipeline with new image tag                   |
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/45.png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/35.png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/36.png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/42.png)
 
 ### Notifications
 
@@ -186,6 +192,9 @@ Run:
 chmod +x setup_k3s_argocd.sh
 ./setup_k3s_argocd.sh
 ```
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/40.png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/41.png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/43.png)
 
 Access ArgoCD at: [https://mohamedesmaelargocd.work.gd](https://mohamedesmaelargocd.work.gd)
 [Script link](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/argocd/configs/setup_k3s_argocd.sh)
@@ -224,24 +233,17 @@ Grafana visualizes metrics with preconfigured dashboards.
 ## CI/CD Workflow Diagram
 
 
-[!Workflow Diagram 1](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/01.png)
+![Workflow Diagram 1](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/01.png)
 
-[!Workflow Diagram 1](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/02.png)
+![Workflow Diagram 1](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/02.png)
 
 
 ## Additional Shots
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/40.png)
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/41.png)
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/43.png)
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/45.png)
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/35.png)
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/36.png)
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/17.png)
+
 ![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/25.png)
 ![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/12.png)
 ![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/24.png)
 ![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/28.png)
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/42.png)
 ![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/44.png)
 
 
