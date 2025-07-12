@@ -22,8 +22,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUBTOKEN }}
-          fetch-depth: 0  
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+          ref: git-actions-pipeline
 
       - name: Install Ansible
         run: |
@@ -50,8 +51,8 @@ jobs:
 
       - name: Notify on Success
         if: ${{ success() }}
-        run: echo " CD Pipeline completed successfully for image_tag=${{ github.event.inputs.image_tag }}"
+        run: echo "CD Pipeline completed successfully for image_tag=${{ github.event.inputs.image_tag }}"
 
       - name: Notify on Failure
         if: ${{ failure() }}
-        run: echo " CD Pipeline failed. Check logs for details."
+        run: echo "CD Pipeline failed. Check logs for details."
