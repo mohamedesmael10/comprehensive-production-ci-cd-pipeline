@@ -10,8 +10,6 @@ on:
 
 env:
   APP_NAME: comprehensive-production-ci-cd-pipeline-github-actions
-  IMAGE_NAME: ${{ secrets.DOCKER_USER }}/${{ env.APP_NAME }}
-  IMAGE_TAG: ${{ github.event.inputs.release }}-${{ github.run_number }}
 
 jobs:
   setup-apache:
@@ -107,21 +105,21 @@ jobs:
           context: .
           push: false
           tags: |
-            ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-            ${{ env.IMAGE_NAME }}:latest
+            ${{ secrets.DOCKER_USER }}/${{ env.APP_NAME }}:${{ github.event.inputs.release }}-${{ github.run_number }}
+            ${{ secrets.DOCKER_USER }}/${{ env.APP_NAME }}:latest
 
       - name: Trivy Image Scan
         uses: aquasecurity/trivy-action@v0
         with:
           scan-type: image
-          image-ref: ${{ env.IMAGE_NAME }}:latest
+          image-ref: ${{ secrets.DOCKER_USER }}/${{ env.APP_NAME }}:latest
           exit-code: 0
           severity: HIGH,CRITICAL
 
       - name: Push Docker Image
         run: |
-          docker push ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-          docker push ${{ env.IMAGE_NAME }}:latest
+          docker push ${{ secrets.DOCKER_USER }}/${{ env.APP_NAME }}:${{ github.event.inputs.release }}-${{ github.run_number }}
+          docker push ${{ secrets.DOCKER_USER }}/${{ env.APP_NAME }}:latest
 
   trigger-cd:
     name: Trigger CD Workflow
@@ -138,10 +136,9 @@ jobs:
       - name: Trigger CD via GitHub API
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
-          IMAGE_TAG: ${{ env.IMAGE_TAG }}
         run: |
           curl -X POST \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer $GITHUB_TOKEN" \
             https://api.github.com/repos/mohamedesmael10/comprehensive-production-ci-cd-pipeline/git-actions-pipeline/actions/workflows/cd-pipeline.yml/dispatches \
-            -d '{"ref":"git-actions-pipeline","inputs":{"image_tag":"'$IMAGE_TAG'"}}'
+            -d '{"ref":"git-actions-pipeline","inputs":{"image_tag":"${{ github.event.inputs.release }}-${{ github.run_number }}"}}'
