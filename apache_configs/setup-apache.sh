@@ -7,7 +7,7 @@ sudo apt-get install -y apache2 certbot python3-certbot-apache curl
 
 echo ""
 echo "=== Enabling Apache modules ==="
-sudo a2enmod proxy proxy_http proxy_html ssl
+sudo a2enmod proxy proxy_http proxy_html ssl rewrite
 
 echo ""
 echo "=== Starting Apache temporarily for HTTP (needed for certbot) ==="
