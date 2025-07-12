@@ -8,6 +8,12 @@
   gather_facts: true  
 
   tasks:
+    - name: Ensure K3s and ArgoCD script is executable
+      file:
+        path: "../argocd/configs/setup_k3s_argocd.sh" 
+        mode: '0755'
+      become: true
+
     - name: Ensure cAdvisor and Jenkins setup script is executable
       file:
         path: "../prometheus/setup_cadvisor_and_jenkins.sh"  
@@ -25,6 +31,11 @@
         path: "../prometheus/setup_grafana.sh"  
         mode: '0755'
       become: true
+
+    - name: Setup K3s and ArgoCD
+      script: "../argocd/configs/setup_k3s_argocd.sh"
+      become: true
+      ignore_errors: yes
 
     - name: Setup cAdvisor and Jenkins
       script: "../prometheus/setup_cadvisor_and_jenkins.sh"  
