@@ -24,6 +24,6 @@ if ! systemctl is-active --quiet apache2; then
   sudo systemctl enable --now apache2
 fi
 
-sudo systemctl reload apache2
+sudo systemctl restart apache2
 
 echo "Done"
