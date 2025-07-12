@@ -39,7 +39,7 @@ I configured Apache HTTP Server as a reverse proxy for Jenkins and SonarQube, us
 
 ![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/21.png)
 
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/6.png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/06.png)
 
 
 ### Configuration Links
@@ -77,7 +77,7 @@ I set up SonarQube webhooks to notify Jenkins of analysis results, enabling auto
 ![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/13.png)
 
 
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/7.png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/07.png)
 
 
 ![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/18.png)
@@ -135,7 +135,7 @@ The CI pipeline is defined in `Jenkinsfile` and runs on a `jenkins-agent` node. 
 
 Emails are sent on success and failure.
 
-!Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/10.png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/10.png)
 
 
 ![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/47.jpg)
@@ -222,14 +222,12 @@ Grafana visualizes metrics with preconfigured dashboards.
 
 ## CI/CD Workflow Diagram
 
-```
+
 [!Workflow Diagram 1](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/01.png)
 
 [!Workflow Diagram 1](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/02.png)
 
 
-
-```
 ## Additional Shots
 ![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/40.png)
 ![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/41.png)
