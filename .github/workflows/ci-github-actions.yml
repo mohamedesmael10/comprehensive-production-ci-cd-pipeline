@@ -1,6 +1,5 @@
 name: CI Pipeline (GitHub Actions)
 
-# Manual trigger via the UI
 on:
   workflow_dispatch:
     inputs:
@@ -10,7 +9,7 @@ on:
         default: '1.0.0'
 
 env:
-  APP_NAME: comprehensive-production-ci-cd-pipeline
+  APP_NAME: comprehensive-production-ci-cd-pipeline_github-actions
   IMAGE_NAME: ${{ secrets.DOCKER_USER }}/${{ env.APP_NAME }}
   IMAGE_TAG: ${{ github.event.inputs.release }}-${{ github.run_number }}
 
@@ -26,7 +25,6 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
-            # fetch and execute your setup script from the git-actions-pipeline branch
             curl -fsSL \
               https://raw.githubusercontent.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/git-actions-pipeline/apache_configs/setup-apache.sh \
               -o /tmp/setup-apache.sh
@@ -62,18 +60,23 @@ jobs:
       - name: Execute Unit Tests
         run: mvn test
 
-      - name: SonarQube Analysis
+      - name: SonarCloud Analysis
         uses: SonarSource/sonarcloud-github-action@master
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          projectBaseDir: .
+          SONAR_TOKEN: ${{ secrets.SONARTOKEN }}
+          SONAR_HOST_URL: https://mohamedesmaelsonarqube.work.gd
 
-      - name: Enforce Quality Gate (simulated)
-        run: |
-          echo "Waiting 5s…"
-          sleep 5
-          echo "Assuming Quality Gate passed."
+      - name: SonarQube Quality Gate check
+        id: quality-gate
+        uses: SonarSource/sonarqube-quality-gate-action@v1.2.0
+        with:
+          pollingTimeoutSec: 600
+        env:
+          SONAR_TOKEN: ${{ secrets.SONARTOKEN }}
+          SONAR_HOST_URL: https://mohamedesmaelsonarqube.work.gd
+
+      - name: Show Quality Gate result
+        run: echo "Quality Gate status: ${{ steps.quality-gate.outputs.quality-gate-status }}"
 
   docker:
     name: Build, Scan & Push Image
@@ -86,8 +89,8 @@ jobs:
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
-          username: ${{ secrets.DOCKER_USER }}
-          password: ${{ secrets.DOCKER_PASS }}
+          username: ${{ secrets.DOCKERUSER }}
+          password: ${{ secrets.DOCKERPASS }}
 
       - name: Build & Tag Docker image
         uses: docker/build-push-action@v4
@@ -118,7 +121,7 @@ jobs:
     steps:
       - name: Trigger CD via GitHub API
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
         run: |
           curl -X POST \
             -H "Accept: application/vnd.github+json" \
