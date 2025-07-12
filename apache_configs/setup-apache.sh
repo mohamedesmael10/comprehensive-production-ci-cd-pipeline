@@ -3,7 +3,7 @@ set -euo pipefail
 
 echo "=== Updating system and installing Apache & Certbot ==="
 sudo apt-get update
-sudo apt-get install -y apache2 certbot python3-certbot-apache
+sudo apt-get install -y apache2 certbot python3-certbot-apache curl
 
 echo ""
 echo "=== Enabling Apache modules ==="
@@ -13,12 +13,12 @@ echo ""
 echo "=== Starting Apache temporarily for HTTP (needed for certbot) ==="
 sudo systemctl start apache2
 
-CONFIG_BASE=https://raw.githubusercontent.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/git-actions-pipeline/apache_configs
+CONFIG_BASE="https://raw.githubusercontent.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/git-actions-pipeline/apache_configs"
 
 echo ""
 echo "=== Downloading and enabling Apache site configs ==="
-sudo curl -fsSL $CONFIG_BASE/jenkins.conf   -o /etc/apache2/sites-available/jenkins.conf
-sudo curl -fsSL $CONFIG_BASE/sonarqube.conf -o /etc/apache2/sites-available/sonarqube.conf
+sudo curl -fsSL "$CONFIG_BASE/jenkins.conf"   -o /etc/apache2/sites-available/jenkins.conf
+sudo curl -fsSL "$CONFIG_BASE/sonarqube.conf" -o /etc/apache2/sites-available/sonarqube.conf
 
 sudo a2ensite jenkins.conf
 sudo a2ensite sonarqube.conf
@@ -31,20 +31,31 @@ if command -v ufw >/dev/null 2>&1; then
 fi
 
 echo ""
+echo "=== Ensuring options-ssl-apache.conf exists ==="
+if [ ! -f /etc/letsencrypt/options-ssl-apache.conf ]; then
+    echo "Pre-creating options-ssl-apache.conf…"
+    sudo mkdir -p /etc/letsencrypt
+    sudo curl -fsSL https://raw.githubusercontent.com/certbot/certbot/master/certbot-apache/certbot_apache/_internal/tls_configs/options-ssl-apache.conf \
+      -o /etc/letsencrypt/options-ssl-apache.conf
+fi
+
+echo ""
 echo "=== Obtaining SSL certificates (RSA and ECDSA) ==="
+EMAIL="mohamed.2714104@gmail.com"
+
 # ECDSA certs
 sudo certbot --apache -d mohamedesmael.work.gd \
-  --cert-name mohamedesmael-ecdsa --key-type ecdsa --elliptic-curve secp384r1 --non-interactive --agree-tos -m you@example.com
+  --cert-name mohamedesmael-ecdsa --key-type ecdsa --elliptic-curve secp384r1 --non-interactive --agree-tos -m "$EMAIL"
 
 sudo certbot --apache -d mohamedesmaelsonarqube.work.gd \
-  --cert-name sonarqube-ecdsa --key-type ecdsa --elliptic-curve secp384r1 --non-interactive --agree-tos -m you@example.com
+  --cert-name sonarqube-ecdsa --key-type ecdsa --elliptic-curve secp384r1 --non-interactive --agree-tos -m "$EMAIL"
 
 # RSA certs
 sudo certbot --apache -d mohamedesmael.work.gd \
-  --cert-name mohamedesmael-rsa --non-interactive --agree-tos -m you@example.com
+  --cert-name mohamedesmael-rsa --non-interactive --agree-tos -m "$EMAIL"
 
 sudo certbot --apache -d mohamedesmaelsonarqube.work.gd \
-  --cert-name sonarqube-rsa --non-interactive --agree-tos -m you@example.com
+  --cert-name sonarqube-rsa --non-interactive --agree-tos -m "$EMAIL"
 
 echo ""
 echo "=== Restarting Apache cleanly ==="
@@ -62,7 +73,6 @@ echo "✅ Apache and SSL setup complete"
 echo ""
 echo "=== Adding Dynamic DNS update jobs to crontab ==="
 
-# List of hosts to update
 hosts=(
   "mohamedesmael.work.gd"
   "mohamedesmaelargocd.work.gd"
@@ -77,9 +87,7 @@ fi
 api_key="$DNS_EXIT_API_KEY"
 logfile="/var/log/ipupdate.log"
 
-# Get the current crontab
 existing_crontab=$(crontab -l 2>/dev/null || true)
-
 updated_crontab="$existing_crontab"
 
 for host in "${hosts[@]}"; do
@@ -97,7 +105,6 @@ for host in "${hosts[@]}"; do
     fi
 done
 
-# Install the updated crontab
 echo "$updated_crontab" | crontab -
 
 echo ""
