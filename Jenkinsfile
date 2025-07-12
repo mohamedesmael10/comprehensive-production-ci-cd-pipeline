@@ -65,9 +65,7 @@ pipeline {
         stage("Enforce Quality Gate") {
             steps {
                 script {
-                    echo "Waiting 5 seconds before continuing..."
-                    sleep time: 5, unit: 'SECONDS'
-                    echo "Assuming Quality Gate passed (skipping actual check)"
+                    waitForQualityGate abortPipeline: true, credentialsId: 'jenkins_sonarqube_token'
                 }
             }
         }
