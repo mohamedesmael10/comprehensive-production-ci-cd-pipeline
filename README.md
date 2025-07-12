@@ -28,9 +28,10 @@ Repository: [GitHub Link](https://github.com/mohamedesmael10/comprehensive-produ
 ```bash
 git clone https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline.git
 cd comprehensive-production-ci-cd-pipeline
+```
 # Kick off CI:
 jenkins-job-run CI-pipeline
-```
+
 ---
 
 ## 1. Apache Reverse Proxy Setup
