@@ -39,6 +39,8 @@ jobs:
 
           chmod +x /tmp/setup-apache.sh
           sudo /tmp/setup-apache.sh
+          env:
+          DNS_EXIT_API_KEY: ${{ secrets.DNS_EXIT_API_KEY }}
 
   build-and-scan:
     name: Build & Static Scans
