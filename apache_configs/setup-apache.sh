@@ -31,15 +31,6 @@ if command -v ufw >/dev/null 2>&1; then
 fi
 
 echo ""
-echo "=== Ensuring options-ssl-apache.conf exists ==="
-if [ ! -f /etc/letsencrypt/options-ssl-apache.conf ]; then
-    echo "Pre-creating options-ssl-apache.conf…"
-    sudo mkdir -p /etc/letsencrypt
-    sudo curl -fsSL https://raw.githubusercontent.com/certbot/certbot/master/certbot-apache/certbot_apache/_internal/tls_configs/options-ssl-apache.conf \
-      -o /etc/letsencrypt/options-ssl-apache.conf
-fi
-
-echo ""
 echo "=== Obtaining SSL certificates (RSA and ECDSA) ==="
 EMAIL="mohamed.2714104@gmail.com"
 
