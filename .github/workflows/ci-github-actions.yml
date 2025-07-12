@@ -9,7 +9,7 @@ on:
         default: '1.0.0'
 
 env:
-  APP_NAME: comprehensive-production-ci-cd-pipeline_github-actions
+  APP_NAME: comprehensive-production-ci-cd-pipeline-github-actions
   IMAGE_NAME: ${{ secrets.DOCKER_USER }}/${{ env.APP_NAME }}
   IMAGE_TAG: ${{ github.event.inputs.release }}-${{ github.run_number }}
 
