@@ -22,7 +22,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUBTOKEN }}
           fetch-depth: 0  
 
       - name: Update Deployment Tag
@@ -40,7 +40,6 @@ jobs:
           git push origin HEAD:main
 
       - name: Deploy Monitoring Stack
-        # assumes ansible is pre-installed or available in PATH
         run: |
           ansible-playbook Ansible/deploy_monitoring.yaml
 
