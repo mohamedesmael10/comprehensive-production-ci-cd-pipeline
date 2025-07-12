@@ -8,7 +8,7 @@ on:
         required: true
 
 env:
-  APP_NAME: comprehensive-production-ci-cd-pipeline
+  APP_NAME: comprehensive-production-ci-cd-pipeline-github-actions
 
 jobs:
   deploy:
@@ -24,6 +24,11 @@ jobs:
         with:
           token: ${{ secrets.GITHUBTOKEN }}
           fetch-depth: 0  
+
+      - name: Install Ansible
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ansible
 
       - name: Update Deployment Tag
         run: |
