@@ -7,6 +7,10 @@ on:
         description: 'Release version'
         required: false
         default: '1.0.0'
+      run_cd:
+        description: 'Trigger CD after Docker?'
+        required: false
+        default: 'false'
 
 env:
   APP_NAME: comprehensive-production-ci-cd-pipeline-github-actions
@@ -23,10 +27,6 @@ jobs:
 
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 0
-          ref: git-actions-pipeline
 
       - name: Run setup-apache.sh over SSH
         uses: appleboy/ssh-action@v0.1.8
@@ -132,7 +132,7 @@ jobs:
 
   trigger-cd:
     name: Trigger CD Workflow
-    if: ${{ github.event.inputs.run_cd == 'true' }}
+    if: github.event.inputs.run_cd == 'true'
     needs: docker
     runs-on: ubuntu-latest
     steps:
