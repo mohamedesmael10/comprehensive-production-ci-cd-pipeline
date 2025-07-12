@@ -30,13 +30,14 @@ git clone https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipe
 cd comprehensive-production-ci-cd-pipeline
 # Kick off CI:
 jenkins-job-run CI-pipeline
+```
 ---
 
 ## 1. Apache Reverse Proxy Setup
 
 I configured Apache HTTP Server as a reverse proxy for Jenkins and SonarQube, using domains registered from freedomain.one. This setup secures access to both services via their respective domains.
 
-!Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/21.png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/21.png)
 
 ![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/6.png)
 
