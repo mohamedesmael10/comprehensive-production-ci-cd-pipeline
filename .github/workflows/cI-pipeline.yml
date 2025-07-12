@@ -19,14 +19,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Cleanup workspace
-        run: |
-          git clean -fdx
+        run: git clean -fdx
 
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 0
 
       - name: Run setup-apache.sh over SSH
         uses: appleboy/ssh-action@v0.1.8
@@ -47,14 +43,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Cleanup workspace
-        run: |
-          git clean -fdx
+        run: git clean -fdx
 
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 0
 
       - name: Trivy File Scan
         uses: aquasecurity/trivy-action@v0
@@ -101,20 +93,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Cleanup workspace
-        run: |
-          git clean -fdx
+        run: git clean -fdx
 
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 0
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
-          username: ${{ secrets.DOCKERUSER }}
-          password: ${{ secrets.DOCKERPASS }}
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_PASS }}
 
       - name: Build & Tag Docker image
         uses: docker/build-push-action@v4
@@ -140,25 +128,23 @@ jobs:
 
   trigger-cd:
     name: Trigger CD Workflow
+    if: ${{ github.event.inputs.run_cd == 'true' }}
     needs: docker
     runs-on: ubuntu-latest
     steps:
       - name: Cleanup workspace
-        run: |
-          git clean -fdx
+        run: git clean -fdx
 
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 0
 
       - name: Trigger CD via GitHub API
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
         run: |
           curl -X POST \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer $GITHUB_TOKEN" \
             https://api.github.com/repos/mohamedesmael10/comprehensive-production-ci-cd-pipeline/git-actions-pipeline/actions/workflows/cd-pipeline.yml/dispatches \
-            -d '{"ref":"git-actions-pipeline","inputs":{"image_tag":"'"${IMAGE_TAG}"'"}}'
+            -d '{"ref":"git-actions-pipeline","inputs":{"image_tag":"'$IMAGE_TAG'"}}'
