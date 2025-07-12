@@ -1,5 +1,6 @@
-name: CI Pipeline 
+name: CI Pipeline (GitHub Actions)
 
+# Manual trigger via the UI
 on:
   workflow_dispatch:
     inputs:
@@ -14,8 +15,27 @@ env:
   IMAGE_TAG: ${{ github.event.inputs.release }}-${{ github.run_number }}
 
 jobs:
+  setup-apache:
+    name: Provision Apache on Server
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run setup-apache.sh over SSH
+        uses: appleboy/ssh-action@v0.1.8
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            # fetch and execute your setup script from the git-actions-pipeline branch
+            curl -fsSL \
+              https://raw.githubusercontent.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/git-actions-pipeline/apache_configs/setup-apache.sh \
+              -o /tmp/setup-apache.sh
+            chmod +x /tmp/setup-apache.sh
+            sudo /tmp/setup-apache.sh
+
   build-and-scan:
     name: Build & Static Scans
+    needs: setup-apache
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -103,5 +123,5 @@ jobs:
           curl -X POST \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer $GITHUB_TOKEN" \
-            https://api.github.com/repos/mohamedesmael10/comprehensive-production-ci-cd-pipeline/actions/workflows/cd-pipeline.yml/dispatches \
+            https://api.github.com/repos/mohamedesmael10/comprehensive-production-ci-cd-pipeline/git-actions-pipeline/actions/workflows/cd-pipeline.yml/dispatches \
             -d '{"ref":"main","inputs":{"image_tag":"'"${IMAGE_TAG}"'"}}'
