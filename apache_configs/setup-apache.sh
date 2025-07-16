@@ -19,19 +19,29 @@ if [[ -d /var/log ]]; then
   CRON_CMD+=" >> ${LOGFILE} 2>&1"
 fi
 
-# Fetch existing crontab
-existing_crontab=$(crontab -l 2>/dev/null || true)
+# Fetch existing crontab (but only if there is one)
+if existing_crontab=$(crontab -l 2>/dev/null); then
+  has_existing=true
+else
+  has_existing=false
+  existing_crontab=""
+fi
 
-# Check & add
+# Check if our job is already present
 if grep -Fxq "${CRON_CMD}" <<<"$existing_crontab"; then
   echo "Dynamic DNS job already present in crontab."
 else
-  {
-    # preserve existing entries
-    printf "%s\n" "$existing_crontab"
-    # add our entry
-    printf "*/12 * * * * %s\n" "$CRON_CMD"
-  } | crontab -
+  # Build the new crontab content
+  if $has_existing; then
+    # append to existing entries
+    new_crontab="${existing_crontab}"$'\n'"*/12 * * * * ${CRON_CMD}"
+  else
+    # no existing crontab, just our entry
+    new_crontab="*/12 * * * * ${CRON_CMD}"
+  fi
+
+  # Install it
+  printf "%s\n" "$new_crontab" | crontab -
   echo "Added Dynamic DNS cron job:"
   crontab -l | grep curl
 fi
