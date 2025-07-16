@@ -44,7 +44,7 @@ jobs:
         run: |
           git config user.name "mohamedesmael10"
           git config user.email "mohamed.2714104@gmail.com"
-          git add argocd/deployment.yaml
+          git add -f argocd/deployment.yaml
           git commit -m "Update Deployment Manifest  image_tag=${{ github.event.inputs.image_tag }}"
           git push origin HEAD:git-actions-pipeline
 
