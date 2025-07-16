@@ -13,21 +13,24 @@ LOGFILE="/var/log/ipupdate.log"
 HOST="mohamedesmaelsonarqube.work.gd"
 API_KEY="$DNS_EXIT_API_KEY"
 
-# Build the curl command
-CRON_CMD="curl -s \"https://api.dnsexit.com/dns/ud/?apikey=${API_KEY}\" -d host=${HOST}"
+# Build the curl command without quotes
+CRON_CMD="curl -s https://api.dnsexit.com/dns/ud/?apikey=${API_KEY} -d host=${HOST}"
 if [[ -d /var/log ]]; then
   CRON_CMD+=" >> ${LOGFILE} 2>&1"
 fi
 
-# Install the cron job if not already present
+# Fetch existing crontab
 existing_crontab=$(crontab -l 2>/dev/null || true)
-if grep -Fq "${CRON_CMD}" <<<"${existing_crontab}"; then
+
+# Check & add
+if grep -Fxq "${CRON_CMD}" <<<"$existing_crontab"; then
   echo "Dynamic DNS job already present in crontab."
 else
-  echo "*/12 * * * * ${CRON_CMD}" | {
-    # preserve any existing entries
-    printf "%s\n" "${existing_crontab}"
-    cat
+  {
+    # preserve existing entries
+    printf "%s\n" "$existing_crontab"
+    # add our entry
+    printf "*/12 * * * * %s\n" "$CRON_CMD"
   } | crontab -
   echo "Added Dynamic DNS cron job:"
   crontab -l | grep curl
@@ -43,7 +46,7 @@ echo "=== Enabling Apache modules ==="
 a2enmod proxy proxy_http proxy_html ssl rewrite
 
 echo
-echo "=== Starting Apache temporarily for HTTP validation ==="
+echo "=== Starting Apache for HTTP validation ==="
 systemctl start apache2
 
 CONFIG_BASE="https://raw.githubusercontent.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/git-actions-pipeline/apache_configs"
@@ -69,7 +72,6 @@ certbot --apache \
   --cert-name sonarqube-ecdsa \
   --key-type ecdsa --elliptic-curve secp384r1 \
   -d "${HOST}"
-
 # RSA
 certbot --apache \
   --non-interactive --agree-tos -m "${EMAIL}" \
