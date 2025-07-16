@@ -13,36 +13,29 @@ LOGFILE="/var/log/ipupdate.log"
 HOST="mohamedesmaelsonarqube.work.gd"
 API_KEY="$DNS_EXIT_API_KEY"
 
-# Build the curl command without quotes
-CRON_CMD="curl -s https://api.dnsexit.com/dns/ud/?apikey=${API_KEY} -d host=${HOST}"
-if [[ -d /var/log ]]; then
-  CRON_CMD+=" >> ${LOGFILE} 2>&1"
+# Build the curl command
+command="curl -s https://api.dnsexit.com/dns/ud/?apikey=${API_KEY} -d host=${HOST}"
+if [ -d "/var/log" ]; then
+  command="$command >> ${LOGFILE} 2>&1"
 fi
 
-# Fetch existing crontab (but only if there is one)
-if existing_crontab=$(crontab -l 2>/dev/null); then
-  has_existing=true
-else
-  has_existing=false
-  existing_crontab=""
-fi
+# Get the existing crontab content (empty if none)
+existing_crontab=$(crontab -l 2>/dev/null || true)
 
-# Check if our job is already present
-if grep -Fxq "${CRON_CMD}" <<<"$existing_crontab"; then
-  echo "Dynamic DNS job already present in crontab."
+# Check if the command is already in crontab
+if [[ $existing_crontab == *"$command"* ]]; then
+  echo "Scheduled job already exists in crontab."
 else
-  # Build the new crontab content
-  if $has_existing; then
-    # append to existing entries
-    new_crontab="${existing_crontab}"$'\n'"*/12 * * * * ${CRON_CMD}"
+  # Build the new crontab content without leading blank lines
+  if [[ -z "$existing_crontab" ]]; then
+    new_crontab="*/12 * * * * $command"
   else
-    # no existing crontab, just our entry
-    new_crontab="*/12 * * * * ${CRON_CMD}"
+    new_crontab="${existing_crontab}"$'\n'"*/12 * * * * $command"
   fi
 
-  # Install it
+  # Install the modified crontab
   printf "%s\n" "$new_crontab" | crontab -
-  echo "Added Dynamic DNS cron job:"
+  echo "The following job has been added to crontab. Use 'crontab -l' to view:"
   crontab -l | grep curl
 fi
 
@@ -64,7 +57,8 @@ EMAIL="mohamed.2714104@gmail.com"
 
 echo
 echo "=== Deploying HTTP vhost and enabling site ==="
-curl -fsSL "${CONFIG_BASE}/sonarqube-http.conf" -o /etc/apache2/sites-available/sonarqube-http.conf
+curl -fsSL "${CONFIG_BASE}/sonarqube-http.conf" \
+  -o /etc/apache2/sites-available/sonarqube-http.conf
 a2ensite sonarqube-http.conf
 
 echo
@@ -90,7 +84,8 @@ certbot --apache \
 
 echo
 echo "=== Deploying SSL vhost and enabling site ==="
-curl -fsSL "${CONFIG_BASE}/sonarqube-ssl.conf" -o /etc/apache2/sites-available/sonarqube-ssl.conf
+curl -fsSL "${CONFIG_BASE}/sonarqube-ssl.conf" \
+  -o /etc/apache2/sites-available/sonarqube-ssl.conf
 a2ensite sonarqube-ssl.conf
 
 echo
