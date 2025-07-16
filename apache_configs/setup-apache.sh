@@ -1,116 +1,93 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo ""
-echo "=== Adding Dynamic DNS update jobs to crontab ==="
+echo
+echo "=== Adding Dynamic DNS update job to crontab ==="
 
-hosts=(
-  "mohamedesmael.work.gd"
-  "mohamedesmaelargocd.work.gd"
-  "mohamedesmaelsonarqube.work.gd"
-)
-
-if [ -z "${DNS_EXIT_API_KEY:-}" ]; then
+if [[ -z "${DNS_EXIT_API_KEY:-}" ]]; then
   echo "❌ Error: DNS_EXIT_API_KEY environment variable not set"
   exit 1
 fi
 
-api_key="$DNS_EXIT_API_KEY"
-logfile="/var/log/ipupdate.log"
+LOGFILE="/var/log/ipupdate.log"
+HOST="mohamedesmaelsonarqube.work.gd"
+API_KEY="$DNS_EXIT_API_KEY"
 
+# Build the curl command
+CRON_CMD="curl -s \"https://api.dnsexit.com/dns/ud/?apikey=${API_KEY}\" -d host=${HOST}"
+if [[ -d /var/log ]]; then
+  CRON_CMD+=" >> ${LOGFILE} 2>&1"
+fi
+
+# Install the cron job if not already present
 existing_crontab=$(crontab -l 2>/dev/null || true)
-updated_crontab="${existing_crontab:-}"
+if grep -Fq "${CRON_CMD}" <<<"${existing_crontab}"; then
+  echo "Dynamic DNS job already present in crontab."
+else
+  echo "*/12 * * * * ${CRON_CMD}" | {
+    # preserve any existing entries
+    printf "%s\n" "${existing_crontab}"
+    cat
+  } | crontab -
+  echo "Added Dynamic DNS cron job:"
+  crontab -l | grep curl
+fi
 
-for host in "${hosts[@]}"; do
-    command="curl -s https://api.dnsexit.com/dns/ud/?apikey=$api_key -d host=$host"
-    if [ -d "/var/log" ]; then
-        command="$command >> $logfile 2>&1"
-    fi
+echo
+echo "=== Installing Apache, Certbot & curl ==="
+apt-get update
+apt-get install -y apache2 certbot python3-certbot-apache curl
 
-    if grep -qF "$command" <<< "$existing_crontab"; then
-        echo "Scheduled job for $host already exists in crontab."
-    else
-        if [ -n "$updated_crontab" ]; then
-            updated_crontab="${updated_crontab}
-*/12 * * * * $command"
-        else
-            updated_crontab="*/12 * * * * $command"
-        fi
-        echo "Added scheduled job for $host."
-    fi
-done
-
-echo "$updated_crontab" | crontab -
-
-echo ""
-echo "=== Crontab jobs configured. Current curl jobs: ==="
-crontab -l | grep curl || echo "No curl jobs found"
-
-echo ""
-echo "=== Updating system and installing Apache & Certbot ==="
-sudo apt-get update
-sudo apt-get install -y apache2 certbot python3-certbot-apache curl
-
-echo ""
+echo
 echo "=== Enabling Apache modules ==="
-sudo a2enmod proxy proxy_http proxy_html ssl rewrite
+a2enmod proxy proxy_http proxy_html ssl rewrite
 
-echo ""
-echo "=== Starting Apache temporarily for HTTP (needed for certbot) ==="
-sudo systemctl start apache2
+echo
+echo "=== Starting Apache temporarily for HTTP validation ==="
+systemctl start apache2
 
 CONFIG_BASE="https://raw.githubusercontent.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/git-actions-pipeline/apache_configs"
-
-echo ""
-echo "=== Downloading and enabling Apache HTTP site configs ==="
-sudo curl -fsSL "$CONFIG_BASE/jenkins-http.conf"   -o /etc/apache2/sites-available/jenkins-http.conf
-sudo curl -fsSL "$CONFIG_BASE/sonarqube-http.conf" -o /etc/apache2/sites-available/sonarqube-http.conf
-
-sudo a2ensite jenkins-http.conf
-sudo a2ensite sonarqube-http.conf
-
-if command -v ufw >/dev/null 2>&1; then
-  echo ""
-  echo "=== Configuring UFW firewall ==="
-  sudo ufw allow 80/tcp
-  sudo ufw allow 443/tcp
-fi
-
-echo ""
-echo "=== Obtaining SSL certificates (RSA and ECDSA) ==="
 EMAIL="mohamed.2714104@gmail.com"
 
-# ECDSA certs
-sudo certbot --apache -d mohamedesmael.work.gd \
-  --cert-name mohamedesmael-ecdsa --key-type ecdsa --elliptic-curve secp384r1 --non-interactive --agree-tos -m "$EMAIL"
+echo
+echo "=== Deploying HTTP vhost and enabling site ==="
+curl -fsSL "${CONFIG_BASE}/sonarqube-http.conf" -o /etc/apache2/sites-available/sonarqube-http.conf
+a2ensite sonarqube-http.conf
 
-sudo certbot --apache -d mohamedesmaelsonarqube.work.gd \
-  --cert-name sonarqube-ecdsa --key-type ecdsa --elliptic-curve secp384r1 --non-interactive --agree-tos -m "$EMAIL"
-
-# RSA certs
-sudo certbot --apache -d mohamedesmael.work.gd \
-  --cert-name mohamedesmael-rsa --non-interactive --agree-tos -m "$EMAIL"
-
-sudo certbot --apache -d mohamedesmaelsonarqube.work.gd \
-  --cert-name sonarqube-rsa --non-interactive --agree-tos -m "$EMAIL"
-
-echo ""
-echo "=== Downloading and enabling Apache SSL site configs ==="
-sudo curl -fsSL "$CONFIG_BASE/jenkins-ssl.conf"   -o /etc/apache2/sites-available/jenkins-ssl.conf
-sudo curl -fsSL "$CONFIG_BASE/sonarqube-ssl.conf" -o /etc/apache2/sites-available/sonarqube-ssl.conf
-
-sudo a2ensite jenkins-ssl.conf
-sudo a2ensite sonarqube-ssl.conf
-
-echo ""
-echo "=== Restarting Apache cleanly ==="
-if pgrep apache2 >/dev/null 2>&1; then
-    echo "Apache already running, restarting…"
-    sudo systemctl restart apache2
-else
-    echo "Starting Apache…"
-    sudo systemctl start apache2
+echo
+echo "=== Opening firewall ports ==="
+if command -v ufw &>/dev/null; then
+  ufw allow 80/tcp
+  ufw allow 443/tcp
 fi
 
-echo ""
-echo "🎉✅ All Done."
+echo
+echo "=== Obtaining SSL certificates ==="
+# ECDSA
+certbot --apache \
+  --non-interactive --agree-tos -m "${EMAIL}" \
+  --cert-name sonarqube-ecdsa \
+  --key-type ecdsa --elliptic-curve secp384r1 \
+  -d "${HOST}"
+
+# RSA
+certbot --apache \
+  --non-interactive --agree-tos -m "${EMAIL}" \
+  --cert-name sonarqube-rsa \
+  -d "${HOST}"
+
+echo
+echo "=== Deploying SSL vhost and enabling site ==="
+curl -fsSL "${CONFIG_BASE}/sonarqube-ssl.conf" -o /etc/apache2/sites-available/sonarqube-ssl.conf
+a2ensite sonarqube-ssl.conf
+
+echo
+echo "=== Restarting Apache ==="
+if systemctl is-active --quiet apache2; then
+  systemctl restart apache2
+else
+  systemctl start apache2
+fi
+
+echo
+echo "🎉✅ setup-apache.sh completed successfully."
