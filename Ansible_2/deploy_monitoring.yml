@@ -1,0 +1,113 @@
+# Ansible playbook: deploy_monitoring.yaml
+
+---
+- name: Deploy Monitoring Stack
+  hosts: monitoring
+  become: true
+  vars:
+    prometheus_version: "2.41.0"
+    grafana_version: "10.5.0"
+    node_exporter_version: "1.7.2"
+    monitoring_network: "monitoring-net"
+    prometheus_config_src: "files/prometheus.yml"
+    grafana_provisioning_dir: "files/grafana/provisioning"
+
+  tasks:
+    - name: Ensure apt cache is up to date
+      apt:
+        update_cache: yes
+
+    - name: Install Docker & required packages
+      apt:
+        name:
+          - docker.io
+          - python3-pip
+        state: present
+
+    - name: Install Docker Python SDK
+      pip:
+        name: docker
+
+    - name: Ensure Docker service is started
+      service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Create Docker network for monitoring
+      community.docker.docker_network:
+        name: "{{ monitoring_network }}"
+        state: present
+
+    - name: Copy Prometheus config
+      copy:
+        src: "{{ prometheus_config_src }}"
+        dest: /opt/monitoring/prometheus.yml
+        owner: root
+        mode: '0644'
+
+    - name: Deploy Prometheus container
+      community.docker.docker_container:
+        name: prometheus
+        image: "prom/prometheus:{{ prometheus_version }}"
+        state: started
+        restart_policy: always
+        networks:
+          - name: "{{ monitoring_network }}"
+        volumes:
+          - /opt/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+        published_ports:
+          - "9090:9090"
+
+    - name: Deploy Node Exporter container
+      community.docker.docker_container:
+        name: node-exporter
+        image: "prom/node-exporter:{{ node_exporter_version }}"
+        state: started
+        restart_policy: always
+        networks:
+          - name: "{{ monitoring_network }}"
+        published_ports:
+          - "9100:9100"
+
+    - name: Copy Grafana provisioning files
+      copy:
+        src: "{{ grafana_provisioning_dir }}/"
+        dest: /opt/monitoring/provisioning/
+        owner: root
+        mode: '0755'
+      with_fileglob:
+        - "files/grafana/provisioning/*"
+
+    - name: Deploy Grafana container
+      community.docker.docker_container:
+        name: grafana
+        image: "grafana/grafana:{{ grafana_version }}"
+        state: started
+        restart_policy: always
+        networks:
+          - name: "{{ monitoring_network }}"
+        volumes:
+          - /opt/monitoring/provisioning:/etc/grafana/provisioning
+          - /opt/monitoring/grafana-data:/var/lib/grafana
+        published_ports:
+          - "3000:3000"
+
+    - name: Wait for Prometheus to be ready
+      uri:
+        url: http://localhost:9090/-/ready
+        status_code: 200
+        retries: 5
+        delay: 5
+
+    - name: Wait for Grafana to be ready
+      uri:
+        url: http://localhost:3000/api/health
+        status_code: 200
+        retries: 5
+        delay: 5
+
+    - name: Display deployment status
+      debug:
+        msg: |
+          Prometheus (9090), Node Exporter (9100), and Grafana (3000) are now up on {{ inventory_hostname }}.

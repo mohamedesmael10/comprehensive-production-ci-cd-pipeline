@@ -1,0 +1,44 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      java: corretto17
+    commands:
+      - echo "Installing Trivy and Sonar Scanner..."
+      - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+      - curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.8.0.2856-linux.zip
+      - unzip sonar-scanner.zip && mv sonar-scanner-*/ /opt/sonar-scanner
+      - export PATH=/opt/sonar-scanner/bin:$PATH
+
+  pre_build:
+    commands:
+      - echo "Running Trivy filesystem scan..."
+      - trivy fs --exit-code 0 --severity HIGH,CRITICAL --skip-dirs target,.git .
+
+  build:
+    commands:
+      - echo "Building with Maven..."
+      - mvn clean package
+      - mvn dependency:copy-dependencies
+
+  post_build:
+    commands:
+      - echo "Starting SonarCloud analysis..."
+      - sonar-scanner \
+          -Dsonar.projectKey=comprehensive-production-ci-cd-pipeline \
+          -Dsonar.organization=mohamedesmael10 \
+          -Dsonar.host.url=https://sonarcloud.io \
+          -Dsonar.java.binaries=target \
+          -Dsonar.java.libraries=target/dependency/*.jar \
+          -Dsonar.login=$SONAR_TOKEN
+      - echo "Checking Sonar quality gate..."
+      - >
+        REPORT=$(curl -s -u $SONAR_TOKEN: \
+          "https://sonarcloud.io/api/qualitygates/project_status?projectKey=comprehensive-production-ci-cd-pipeline")
+      - echo "$REPORT"
+
+artifacts:
+  files:
+    - target/*.jar
+    - target/dependency/**/*

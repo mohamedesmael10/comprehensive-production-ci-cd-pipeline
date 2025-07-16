@@ -1,0 +1,33 @@
+# buildspec-cd.yml
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - echo "Updating apt and installing Ansible & Git..."
+      - apt-get update
+      - apt-get install -y ansible git
+
+  pre_build:
+    commands:
+      - echo "Using IMAGE_TAG=$IMAGE_TAG"
+
+  build:
+    commands:
+      - echo "Running Ansible playbook to deploy monitoring stack..."
+      - ansible-playbook Ansible/deploy_monitoring.yaml
+      - echo "Updating ArgoCD manifest image tag..."
+      - sed -i "s|${APP_NAME}:.*|${APP_NAME}:${IMAGE_TAG}|g" argocd/deployment.yaml
+
+  post_build:
+    commands:
+      - echo "Committing updated manifest back to GitHub..."
+      - git config user.name "mohamedesmael10"
+      - git config user.email "mohamed.2714104@gmail.com"
+      - git add argocd/deployment.yaml
+      - git commit -m "Update image_tag=${IMAGE_TAG}"
+      - git push origin $CODEBUILD_SOURCE_VERSION
+
+artifacts:
+  files:
+    - argocd/deployment.yaml

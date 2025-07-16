@@ -1,0 +1,25 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo "Logging in to Docker Hub..."
+      - echo $DOCKERHUB_PASS | docker login --username $DOCKERHUB_USER --password-stdin
+
+  build:
+    commands:
+      - echo "Building Docker image..."
+      - docker build -t $DOCKERHUB_USER/${APP_NAME}:$CODEBUILD_BUILD_NUMBER .
+      - docker tag $DOCKERHUB_USER/${APP_NAME}:$CODEBUILD_BUILD_NUMBER $DOCKERHUB_USER/${APP_NAME}:latest
+
+  post_build:
+    commands:
+      - echo "Scanning Docker image for vulnerabilities..."
+      - trivy image --exit-code 0 --severity HIGH,CRITICAL $DOCKERHUB_USER/${APP_NAME}:latest
+      - echo "Pushing Docker images..."
+      - docker push $DOCKERHUB_USER/${APP_NAME}:$CODEBUILD_BUILD_NUMBER
+      - docker push $DOCKERHUB_USER/${APP_NAME}:latest
+
+artifacts:
+  files:
+    - '**/*'
