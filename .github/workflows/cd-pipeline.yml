@@ -37,8 +37,11 @@ jobs:
       - name: Update Deployment Tag
         run: |
           echo "Updating argocd/deployment.yaml to use image_tag=${{ github.event.inputs.image_tag }}"
-          sed -i "s|${APP_NAME}:.*|${APP_NAME}:${{ github.event.inputs.image_tag }}|g" argocd/deployment.yaml
+          IMAGE_TAG=${{ github.event.inputs.image_tag }}
+          sed -i "s|\(image:.*${{ env.APP_NAME }}:\).*|\1${IMAGE_TAG}|g" argocd/deployment.yaml
+          echo "Updated deployment.yaml:"
           cat argocd/deployment.yaml
+
 
       - name: Commit & Push updated manifest
         run: |
