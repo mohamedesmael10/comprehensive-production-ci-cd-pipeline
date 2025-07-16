@@ -7,21 +7,23 @@ on:
         description: 'Release version'
         required: false
         default: '1.0.0'
+      run_cd:
+        description: 'Trigger CD after build?'
+        required: false
+        default: 'false'
 
 env:
   APP_NAME: comprehensive-production-ci-cd-pipeline-github-actions
 
 jobs:
-  setup-apache:
-    name: Provision Apache on Server
+  build-and-scan:
+    name: Build, Scan & SonarCloud Analysis
     runs-on: ubuntu-latest
     steps:
       - name: Cleanup workspace
         run: |
           if [ -d .git ]; then
             git clean -fdx
-          else
-            echo "No .git directory found, skipping cleanup."
           fi
 
       - name: Checkout repository
@@ -30,26 +32,6 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
           ref: git-actions-pipeline
-      
-      - name: Run setup-apache.sh directly
-        run: |
-          curl -fsSL https://raw.githubusercontent.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/git-actions-pipeline/apache_configs/setup-apache.sh -o /tmp/setup-apache.sh
-          chmod +x /tmp/setup-apache.sh
-          sudo --preserve-env=DNS_EXIT_API_KEY /tmp/setup-apache.sh
-        env:
-          DNS_EXIT_API_KEY: ${{ secrets.DNS_EXIT_API_KEY }}
-
-
-  build-and-scan:
-    name: Build & Static Scans
-    needs: setup-apache
-    runs-on: ubuntu-latest
-    steps:
-      - name: Cleanup workspace
-        run: git clean -fdx
-
-      - name: Checkout repository
-        uses: actions/checkout@v4
 
       - name: Trivy File Scan
         uses: aquasecurity/trivy-action@v0
@@ -72,20 +54,21 @@ jobs:
       - name: Execute Unit Tests
         run: mvn test
 
-      - name: SonarCloud Analysis
+      - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
-        env:
-          SONAR_TOKEN: ${{ secrets.SONARTOKEN }}
-          SONAR_HOST_URL: https://mohamedesmaelsonarqube.work.gd
-
-      - name: SonarQube Quality Gate check
-        id: quality-gate
-        uses: SonarSource/sonarqube-quality-gate-action@v1.2.0
         with:
-          pollingTimeoutSec: 600
+          projectBaseDir: .
+          organization: mohamedesmael10
+          projectKey: comprehensive-production-ci-cd-pipeline
         env:
           SONAR_TOKEN: ${{ secrets.SONARTOKEN }}
-          SONAR_HOST_URL: https://mohamedesmaelsonarqube.work.gd
+
+      - name: SonarCloud Quality Gate check
+        uses: SonarSource/sonarcloud-quality-gate-action@master
+        with:
+          timeout: 600
+        env:
+          SONAR_TOKEN: ${{ secrets.SONARTOKEN }}
 
   docker:
     name: Build, Scan & Push Image
@@ -140,10 +123,10 @@ jobs:
 
       - name: Trigger CD via GitHub API
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           curl -X POST \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer $GITHUB_TOKEN" \
             https://api.github.com/repos/mohamedesmael10/comprehensive-production-ci-cd-pipeline/git-actions-pipeline/actions/workflows/cd-pipeline.yml/dispatches \
-            -d '{"ref":"git-actions-pipeline","inputs":{"image_tag":"${{ github.event.inputs.release }}-${{ github.run_number }}"}}'
+            -d '{"ref":"git-actions-pipeline","inputs":{"image_tag":"'"${{ github.event.inputs.release }}-${{ github.run_number }}"'"}}'
