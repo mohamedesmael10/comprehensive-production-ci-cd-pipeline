@@ -16,7 +16,6 @@ on:
           - 'true'
           - 'false'
 
-
 env:
   APP_NAME: comprehensive-production-ci-cd-pipeline-github-actions
 
@@ -35,7 +34,7 @@ jobs:
         uses: aquasecurity/trivy-action@0.32.0
         with:
           scan-type: fs
-          scan-path: '.'
+          input: .
           exit-code: 0
           severity: HIGH,CRITICAL
           skip-dirs: target,.git
@@ -63,7 +62,7 @@ jobs:
       - name: SonarCloud Quality Gate Check
         uses: sonarsource/sonarqube-quality-gate-action@v1.1.0
         with:
-          pollingTimeoutSec: 600
+          scanMetadataReportFile: .scannerwork/report-task.txt
         env:
           SONAR_TOKEN: ${{ secrets.SONARTOKEN }}
 
