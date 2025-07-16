@@ -48,6 +48,9 @@ jobs:
       - name: Build & Test
         run: mvn clean package
 
+      - name: Copy project dependencies
+        run: mvn dependency:copy-dependencies
+
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2
         with:
@@ -56,6 +59,7 @@ jobs:
             -Dsonar.organization=mohamedesmael10
             -Dsonar.host.url=https://sonarcloud.io
             -Dsonar.java.binaries=target
+            -Dsonar.java.libraries=target/dependency/*.jar
         env:
           SONAR_TOKEN: ${{ secrets.SONARTOKEN }}
 
@@ -78,8 +82,8 @@ jobs:
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
-          username: ${{ secrets.DOCKER_USER }}
-          password: ${{ secrets.DOCKER_PASS }}
+          username: ${{ secrets.DOCKERUSER }}
+          password: ${{ secrets.DOCKERPASS }}
 
       - name: Build & Tag Docker image
         uses: docker/build-push-action@v4
@@ -87,22 +91,22 @@ jobs:
           context: .
           push: false
           tags: |
-            ${{ secrets.DOCKER_USER }}/${{ env.APP_NAME }}:${{ github.event.inputs.release }}-${{ github.run_number }}
-            ${{ secrets.DOCKER_USER }}/${{ env.APP_NAME }}:latest
+            ${{ secrets.DOCKERUSER }}/${{ env.APP_NAME }}:${{ github.event.inputs.release }}-${{ github.run_number }}
+            ${{ secrets.DOCKERUSER }}/${{ env.APP_NAME }}:latest
 
       - name: Trivy Image Scan
         uses: aquasecurity/trivy-action@0.32.0
         with:
           scan-type: image
-          image-ref: ${{ secrets.DOCKER_USER }}/${{ env.APP_NAME }}:latest
+          image-ref: ${{ secrets.DOCKERUSER }}/${{ env.APP_NAME }}:latest
           exit-code: 0
           severity: HIGH,CRITICAL
           skip-setup-trivy: true
 
       - name: Push Docker Image
         run: |
-          docker push ${{ secrets.DOCKER_USER }}/${{ env.APP_NAME }}:${{ github.event.inputs.release }}-${{ github.run_number }}
-          docker push ${{ secrets.DOCKER_USER }}/${{ env.APP_NAME }}:latest
+          docker push ${{ secrets.DOCKERUSER }}/${{ env.APP_NAME }}:${{ github.event.inputs.release }}-${{ github.run_number }}
+          docker push ${{ secrets.DOCKERUSER }}/${{ env.APP_NAME }}:latest
 
   trigger-cd:
     name: Trigger CD Workflow
