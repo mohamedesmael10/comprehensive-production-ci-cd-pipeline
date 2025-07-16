@@ -1,5 +1,8 @@
 name: CD Pipeline
 
+permissions:
+  contents: write
+
 on:
   workflow_dispatch:
     inputs:
@@ -18,7 +21,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUBTOKEN }}
+          persist-credentials: true
           fetch-depth: 0
           ref: git-actions-pipeline
 
@@ -31,8 +35,7 @@ jobs:
           sudo apt-get install -y ansible
 
       - name: Deploy Monitoring Stack & install
-        run: |
-          ansible-playbook Ansible/deploy_monitoring.yaml
+        run: ansible-playbook Ansible/deploy_monitoring.yaml
 
       - name: Update Deployment Tag
         run: |
@@ -42,19 +45,18 @@ jobs:
           echo "Updated deployment.yaml:"
           cat argocd/deployment.yaml
 
-
       - name: Commit & Push updated manifest
         run: |
           git config user.name "mohamedesmael10"
           git config user.email "mohamed.2714104@gmail.com"
-          git add -f argocd/deployment.yaml
-          git commit -m "Update Deployment Manifest  image_tag=${{ github.event.inputs.image_tag }}"
+          git add argocd/deployment.yaml
+          git commit -m "Update Deployment Manifest image_tag=${{ github.event.inputs.image_tag }}"
           git push origin HEAD:git-actions-pipeline
 
       - name: Notify on Success
         if: ${{ success() }}
-        run: echo "CD Pipeline completed successfully for image_tag=${{ github.event.inputs.image_tag }}"
+        run: echo " CD Pipeline completed successfully for image_tag=${{ github.event.inputs.image_tag }}"
 
       - name: Notify on Failure
         if: ${{ failure() }}
-        run: echo "CD Pipeline failed. Check logs for details."
+        run: echo " CD Pipeline failed. Check logs for details."
