@@ -4,7 +4,7 @@
   connection: local
   become: true  
   become_method: sudo
-  become_user: jenkins
+  become_user: root
   gather_facts: true  
 
   tasks:
