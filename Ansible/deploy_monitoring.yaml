@@ -16,7 +16,7 @@
 
     - name: Ensure cAdvisor and Jenkins setup script is executable
       file:
-        path: "../prometheus/setup_cadvisor_and_jenkins.sh"  
+        path: "../prometheus/setup_cadvisor.sh"  
         mode: '0755'
       become: true
 
@@ -38,7 +38,7 @@
       ignore_errors: yes
 
     - name: Setup cAdvisor and Jenkins
-      script: "../prometheus/setup_cadvisor_and_jenkins.sh"  
+      script: "../prometheus/setup_cadvisor.sh"  
       become: true
       ignore_errors: yes  
 
