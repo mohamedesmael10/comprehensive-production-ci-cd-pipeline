@@ -1,44 +1,37 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/bash
 
-echo
-echo "=== Adding Dynamic DNS update job to crontab ==="
-
-if [[ -z "${DNS_EXIT_API_KEY:-}" ]]; then
-  echo "❌ Error: DNS_EXIT_API_KEY environment variable not set"
-  exit 1
-fi
-
-LOGFILE="/var/log/ipupdate.log"
+# ================================================
+# IP update task (runs every 12 minutes via cron)
+# ================================================
+# Variables for DNS Exit update
 HOST="mohamedesmaelsonarqube.work.gd"
 API_KEY="$DNS_EXIT_API_KEY"
 
 # Build the curl command
-command="curl -s https://api.dnsexit.com/dns/ud/?apikey=${API_KEY} -d host=${HOST}"
+command="curl https://api.dnsexit.com/dns/ud/?apikey=${API_KEY} -d host=${HOST}"
+
+# If /var/log exists, append output to ipupdate.log
 if [ -d "/var/log" ]; then
-  command="$command >> ${LOGFILE} 2>&1"
+    command="$command >> /var/log/ipupdate.log 2>&1"
 fi
 
-# Get the existing crontab content (empty if none)
+# Install cron job if not already present
 existing_crontab=$(crontab -l 2>/dev/null || true)
-
-# Check if the command is already in crontab
-if [[ $existing_crontab == *"$command"* ]]; then
-  echo "Scheduled job already exists in crontab."
+if grep -Fq "$command" <<< "$existing_crontab"; then
+    echo "Scheduled IP‑update job already exists in crontab."
 else
-  # Build the new crontab content without leading blank lines
-  if [[ -z "$existing_crontab" ]]; then
-    new_crontab="*/12 * * * * $command"
-  else
-    new_crontab="${existing_crontab}"$'\n'"*/12 * * * * $command"
-  fi
-
-  # Install the modified crontab
-  printf "%s\n" "$new_crontab" | crontab -
-  echo "The following job has been added to crontab. Use 'crontab -l' to view:"
-  crontab -l | grep curl
+    echo "Adding IP‑update job to crontab (runs every 12 minutes)..."
+    {
+        echo "$existing_crontab"
+        echo "*/12 * * * * $command"
+    } | crontab -
+    echo "Cron entry added:"
+    crontab -l | grep curl
 fi
 
+# ================================================
+# The rest of your Apache & Certbot setup
+# ================================================
 echo
 echo "=== Installing Apache, Certbot & curl ==="
 apt-get update
