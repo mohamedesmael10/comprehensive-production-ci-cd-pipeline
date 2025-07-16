@@ -59,6 +59,7 @@ jobs:
         with:
           organization: mohamedesmael10
           projectKey: comprehensive-production-ci-cd-pipeline
+          projectBaseDir: .
         env:
           SONAR_TOKEN: ${{ secrets.SONARTOKEN }}
 
