@@ -34,7 +34,7 @@ jobs:
           ref: git-actions-pipeline
 
       - name: Trivy File Scan
-        uses: aquasecurity/trivy-action@v0
+        uses: aquasecurity/trivy-action@v0.13.0
         with:
           scan-type: fs
           scan-path: '.'
@@ -55,7 +55,7 @@ jobs:
         run: mvn test
 
       - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
+        uses: SonarSource/sonarcloud-github-action@v2.0.2
         with:
           projectBaseDir: .
           organization: mohamedesmael10
@@ -64,7 +64,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONARTOKEN }}
 
       - name: SonarCloud Quality Gate check
-        uses: SonarSource/sonarcloud-quality-gate-action@master
+        uses: SonarSource/sonarcloud-quality-gate-action@v1.1.0
         with:
           timeout: 600
         env:
@@ -97,7 +97,7 @@ jobs:
             ${{ secrets.DOCKER_USER }}/${{ env.APP_NAME }}:latest
 
       - name: Trivy Image Scan
-        uses: aquasecurity/trivy-action@v0
+        uses: aquasecurity/trivy-action@v0.13.0
         with:
           scan-type: image
           image-ref: ${{ secrets.DOCKER_USER }}/${{ env.APP_NAME }}:latest
