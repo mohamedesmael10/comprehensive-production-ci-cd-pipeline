@@ -101,7 +101,7 @@ jobs:
           image-ref: ${{ secrets.DOCKERUSER }}/${{ env.APP_NAME }}:latest
           exit-code: 0
           severity: HIGH,CRITICAL
-          skip-setup-trivy: true
+          
 
       - name: Push Docker Image
         run: |
