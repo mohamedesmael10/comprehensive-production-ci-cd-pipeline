@@ -8,18 +8,46 @@ K8S_GROUP=$(id -gn)
 ARGOCD_DOMAIN="mohamedesmaelargocd.work.gd"
 EMAIL="mohamed.2714104@gmail.com"
 
-### 1️⃣ Install K3s ###
-echo "🚀 Installing K3s..."
-curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server" sh -s - --disable traefik
+### 1️⃣ Install Docker ###
+echo "🚀 Installing Docker..."
+sudo apt-get update
+sudo apt-get install -y docker.io
+sudo systemctl enable docker
+sudo systemctl start docker
 
-echo "✅ K3s installed. Exporting kubeconfig..."
-mkdir -p ~/.kube
-sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
-sudo chown "${K8S_USER}:${K8S_GROUP}" ~/.kube/config
-chmod 400 ~/.kube/config
-export KUBECONFIG=~/.kube/config
+### 2️⃣ Install kubeadm, kubelet, kubectl ###
+echo "🚀 Installing kubeadm, kubelet, kubectl..."
+sudo apt-get update && sudo apt-get install -y apt-transport-https curl
+curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+cat <<EOF | sudo tee /etc/apt/sources.list.d/kubernetes.list
+deb https://apt.kubernetes.io/ kubernetes-xenial main
+EOF
+sudo apt-get update
+sudo apt-get install -y kubelet kubeadm kubectl
+sudo apt-mark hold kubelet kubeadm kubectl
 
-### 2️⃣ Install ArgoCD ###
+### 3️⃣ Disable swap (required for kubeadm) ###
+echo "🚀 Disabling swap..."
+sudo swapoff -a
+sudo sed -i '/ swap / s/^/#/' /etc/fstab
+
+### 4️⃣ Initialize Kubernetes cluster ###
+echo "🚀 Initializing Kubernetes cluster..."
+sudo kubeadm init --pod-network-cidr=10.244.0.0/16
+
+### 5️⃣ Setup kubeconfig for current user ###
+echo "🚀 Setting up kubeconfig..."
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown "${K8S_USER}:${K8S_GROUP}" $HOME/.kube/config
+chmod 400 $HOME/.kube/config
+export KUBECONFIG=$HOME/.kube/config
+
+### 6️⃣ Install Flannel network plugin ###
+echo "🚀 Installing Flannel CNI plugin..."
+kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+
+### 7️⃣ Install ArgoCD ###
 echo "🚀 Installing ArgoCD..."
 kubectl create namespace argocd || true
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
@@ -27,13 +55,12 @@ kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/st
 echo "🔄 Patching ArgoCD service to NodePort..."
 kubectl patch svc argocd-server -n argocd -p '{"spec": {"type": "NodePort"}}'
 
-### 3️⃣ Fetch Initial Admin Password ###
+### 8️⃣ Fetch Initial Admin Password ###
 echo "🔑 Fetching ArgoCD initial admin password..."
 ARGOCD_PASSWORD=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
 echo "ArgoCD initial admin password: ${ARGOCD_PASSWORD}"
 
-### 4️⃣ Enable TLS with Ingress ###
-echo "✨ Enabling TLS with Ingress..."
+### 9️⃣ Enable TLS with Ingress ###
 
 echo "🚀 Installing Cert-Manager via Helm..."
 helm repo add jetstack https://charts.jetstack.io
@@ -96,16 +123,10 @@ EOF
 
 echo "✅ Ingress & TLS configuration applied."
 
-### 5️⃣ Install ArgoCD CLI ###
+### 🔟 Install ArgoCD CLI ###
 echo "🚀 Installing ArgoCD CLI..."
 curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
 sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
 rm argocd-linux-amd64
-
-### 6️⃣ Login & Update Password ###
-echo "🔐 Login to ArgoCD CLI..."
-argocd login ${ARGOCD_DOMAIN} --username admin --password "${ARGOCD_PASSWORD}" --insecure
-
-echo "🔄 You can now update the password using: argocd account update-password"
 
 echo "🎉 All done!"
