@@ -34,7 +34,7 @@ jobs:
           ref: git-actions-pipeline
 
       - name: Trivy File Scan
-        uses: aquasecurity/trivy-action@v0.13.0
+        uses: aquasecurity/trivy-action@v0.32.0
         with:
           scan-type: fs
           scan-path: '.'
@@ -55,18 +55,17 @@ jobs:
         run: mvn test
 
       - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v2.0.2
+        uses: sonarsource/sonarqube-scan-action@v5.2.0
         with:
-          projectBaseDir: .
           organization: mohamedesmael10
           projectKey: comprehensive-production-ci-cd-pipeline
         env:
           SONAR_TOKEN: ${{ secrets.SONARTOKEN }}
 
-      - name: SonarCloud Quality Gate check
-        uses: SonarSource/sonarcloud-quality-gate-action@v1.1.0
+      - name: Quality Gate Check
+        uses: sonarsource/sonarqube-quality-gate-action@v1.1.0
         with:
-          timeout: 600
+          pollingTimeoutSec: 600
         env:
           SONAR_TOKEN: ${{ secrets.SONARTOKEN }}
 
@@ -97,12 +96,13 @@ jobs:
             ${{ secrets.DOCKER_USER }}/${{ env.APP_NAME }}:latest
 
       - name: Trivy Image Scan
-        uses: aquasecurity/trivy-action@v0.13.0
+        uses: aquasecurity/trivy-action@v0.32.0
         with:
           scan-type: image
           image-ref: ${{ secrets.DOCKER_USER }}/${{ env.APP_NAME }}:latest
           exit-code: 0
           severity: HIGH,CRITICAL
+          skip-setup-trivy: true
 
       - name: Push Docker Image
         run: |
