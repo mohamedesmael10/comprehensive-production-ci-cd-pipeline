@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -euo pipefail
 
 ### CONFIGURATION ###
 K8S_USER=$(whoami)
@@ -11,65 +11,58 @@ EMAIL="mohamed.2714104@gmail.com"
 ### 1️⃣ Install Docker ###
 echo "🚀 Installing Docker..."
 sudo apt-get update
-sudo apt-get install -y docker.io
+sudo apt-get install -y ca-certificates curl gnupg
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+sudo apt-get update
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 sudo systemctl enable docker
 sudo systemctl start docker
 
-### 2️⃣ Install kubeadm, kubelet, kubectl ###
-echo "🚀 Installing kubeadm, kubelet, kubectl..."
-sudo apt-get update && sudo apt-get install -y apt-transport-https curl
-curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
-cat <<EOF | sudo tee /etc/apt/sources.list.d/kubernetes.list
-deb https://apt.kubernetes.io/ kubernetes-xenial main
-EOF
-sudo apt-get update
-sudo apt-get install -y kubelet kubeadm kubectl
-sudo apt-mark hold kubelet kubeadm kubectl
+### 2️⃣ Install kubectl (latest stable) ###
+echo "📦 Installing kubectl..."
+KUBECTL_VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt)
+curl -LO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+rm kubectl
 
-### 3️⃣ Disable swap (required for kubeadm) ###
-echo "🚀 Disabling swap..."
-sudo swapoff -a
-sudo sed -i '/ swap / s/^/#/' /etc/fstab
+### 3️⃣ Install Minikube ###
+echo "📦 Installing Minikube..."
+curl -LO https://github.com/kubernetes/minikube/releases/latest/download/minikube-linux-amd64
+sudo install minikube-linux-amd64 /usr/local/bin/minikube
+rm minikube-linux-amd64
 
-### 4️⃣ Initialize Kubernetes cluster ###
-echo "🚀 Initializing Kubernetes cluster..."
-sudo kubeadm init --pod-network-cidr=10.244.0.0/16
+### 4️⃣ Start Minikube ###
+echo "🚀 Starting Minikube..."
+minikube start --driver=docker
 
-### 5️⃣ Setup kubeconfig for current user ###
-echo "🚀 Setting up kubeconfig..."
-mkdir -p $HOME/.kube
-sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-sudo chown "${K8S_USER}:${K8S_GROUP}" $HOME/.kube/config
-chmod 400 $HOME/.kube/config
-export KUBECONFIG=$HOME/.kube/config
-
-### 6️⃣ Install Flannel network plugin ###
-echo "🚀 Installing Flannel CNI plugin..."
-kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
-
-### 7️⃣ Install ArgoCD ###
+### 5️⃣ Install ArgoCD ###
 echo "🚀 Installing ArgoCD..."
 kubectl create namespace argocd || true
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
-
-echo "🔄 Patching ArgoCD service to NodePort..."
 kubectl patch svc argocd-server -n argocd -p '{"spec": {"type": "NodePort"}}'
 
-### 8️⃣ Fetch Initial Admin Password ###
-echo "🔑 Fetching ArgoCD initial admin password..."
-ARGOCD_PASSWORD=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
-echo "ArgoCD initial admin password: ${ARGOCD_PASSWORD}"
+### 6️⃣ Get ArgoCD Admin Password ###
+echo "🔑 ArgoCD admin password:"
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d && echo
 
-### 9️⃣ Enable TLS with Ingress ###
-
-echo "🚀 Installing Cert-Manager via Helm..."
+### 7️⃣ Install Cert-Manager ###
+echo "🚀 Installing Cert-Manager..."
 helm repo add jetstack https://charts.jetstack.io
 helm repo update
 helm install cert-manager jetstack/cert-manager \
   --namespace cert-manager --create-namespace \
   --version v1.11.0 --set installCRDs=true
 
-echo "🔄 Creating ClusterIssuer for LetsEncrypt..."
+### 8️⃣ Create Let's Encrypt ClusterIssuer ###
+echo "🔐 Creating Let's Encrypt ClusterIssuer..."
 cat <<EOF | kubectl apply -f -
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
@@ -82,15 +75,17 @@ spec:
     privateKeySecretRef:
       name: letsencrypt-prod
     solvers:
-      - http01:
-          ingress:
-            class: nginx
+    - http01:
+        ingress:
+          class: nginx
 EOF
 
-echo "🚀 Installing NGINX Ingress Controller..."
+### 9️⃣ Install NGINX Ingress ###
+echo "🌐 Installing NGINX Ingress Controller..."
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.7.0/deploy/static/provider/cloud/deploy.yaml
 
-echo "🔄 Creating Ingress for ArgoCD..."
+### 🔟 Create Ingress for ArgoCD ###
+echo "🌐 Creating Ingress for ArgoCD..."
 cat <<EOF | kubectl apply -f -
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -100,7 +95,6 @@ metadata:
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
     kubernetes.io/ingress.class: nginx
-    kubernetes.io/tls-acme: "true"
     nginx.ingress.kubernetes.io/ssl-passthrough: "true"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
 spec:
@@ -121,12 +115,10 @@ spec:
     secretName: argocd-secret
 EOF
 
-echo "✅ Ingress & TLS configuration applied."
-
-### 🔟 Install ArgoCD CLI ###
-echo "🚀 Installing ArgoCD CLI..."
+### 🧪 Install ArgoCD CLI ###
+echo "🧰 Installing ArgoCD CLI..."
 curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
 sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
 rm argocd-linux-amd64
 
-echo "🎉 All done!"
+echo "🎉 All done! ArgoCD and Kubernetes are ready on Minikube."
