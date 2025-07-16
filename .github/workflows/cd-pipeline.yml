@@ -15,10 +15,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Cleanup workspace
-        run: |
-          git clean -fdx
-
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
@@ -26,11 +22,14 @@ jobs:
           fetch-depth: 0
           ref: git-actions-pipeline
 
+      - name: Cleanup workspace
+        run: git clean -fdx
+
       - name: Install Ansible
         run: |
           sudo apt-get update
           sudo apt-get install -y ansible
-      
+
       - name: Deploy Monitoring Stack & install
         run: |
           ansible-playbook Ansible/deploy_monitoring.yaml
@@ -46,7 +45,7 @@ jobs:
           git config user.name "mohamedesmael10"
           git config user.email "mohamed.2714104@gmail.com"
           git add argocd/deployment.yaml
-          git commit -m "Update Deployment Manifest → image_tag=${{ github.event.inputs.image_tag }}"
+          git commit -m "Update Deployment Manifest  image_tag=${{ github.event.inputs.image_tag }}"
           git push origin HEAD:git-actions-pipeline
 
       - name: Notify on Success
