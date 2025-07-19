@@ -27,6 +27,7 @@ sudo apt-get update
 sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
 sudo systemctl enable --now docker
 sudo usermod -aG docker $USER
+
 ### 2️⃣ Install kubectl ###
 echo "📦 Installing kubectl..."
 KUBECTL_VERSION=$(curl -sL https://dl.k8s.io/release/stable.txt)
@@ -52,7 +53,13 @@ kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/st
 echo "⏳ Waiting for ArgoCD to be ready..."
 kubectl wait --for=condition=Available=True deploy/argocd-server -n argocd --timeout=180s
 
-kubectl patch svc argocd-server -n argocd -p '{"spec": {"type": "NodePort"}}'
+### 🔷 Patch Service to fixed NodePort
+echo "🔧 Patching ArgoCD server Service with fixed NodePort 30443..."
+kubectl patch svc argocd-server -n argocd --type=merge -p '{"spec": {"type": "NodePort", "ports": [{"port": 443, "targetPort": 8080, "nodePort": 30443}]}}'
+
+### 🔷 Update /etc/hosts
+MINIKUBE_IP=$(minikube ip)
+echo "${MINIKUBE_IP} ${ARGOCD_DOMAIN}" | sudo tee -a /etc/hosts
 
 ### 6️⃣ Get ArgoCD Admin Password ###
 echo "🔑 ArgoCD admin password:"
@@ -134,9 +141,7 @@ rm argocd-linux-amd64
 
 ### 🔑 Login to ArgoCD CLI ###
 echo "🔐 Logging into ArgoCD CLI..."
-ARGOCD_IP=$(minikube service argocd-server -n argocd --url | tr ' ' '\n' | head -n1 | sed 's|http://||')
-
-argocd login ${ARGOCD_IP} --username admin --password ${ARGOCD_PASSWORD} --insecure
+argocd login ${ARGOCD_DOMAIN}:30443 --username admin --password ${ARGOCD_PASSWORD} --insecure
 
 ### 🚀 Create and Sync App ###
 echo "🚀 Creating ArgoCD Application: $APP_NAME"
@@ -146,13 +151,12 @@ argocd app create ${APP_NAME} \
   --path ${GIT_PATH} \
   --dest-server https://kubernetes.default.svc \
   --dest-namespace default \
-  --server ${ARGOCD_IP} --insecure
+  --server ${ARGOCD_DOMAIN}:30443 --insecure
 
-argocd app set ${APP_NAME} --sync-policy automated --server ${ARGOCD_IP} --insecure
-argocd app sync ${APP_NAME} --server ${ARGOCD_IP} --insecure
-argocd app wait ${APP_NAME} --server ${ARGOCD_IP} --insecure
+argocd app set ${APP_NAME} --sync-policy automated --server ${ARGOCD_DOMAIN}:30443 --insecure
+argocd app sync ${APP_NAME} --server ${ARGOCD_DOMAIN}:30443 --insecure
+argocd app wait ${APP_NAME} --server ${ARGOCD_DOMAIN}:30443 --insecure
 
 echo "🎉 Deployment complete! Visit: https://${ARGOCD_DOMAIN} to access ArgoCD UI."
 
 sleep 10s
-
