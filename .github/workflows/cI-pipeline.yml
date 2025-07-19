@@ -1,4 +1,4 @@
-name: CI Pipeline (GitHub Actions)
+name: CI Pipeline
 
 on:
   workflow_dispatch:
