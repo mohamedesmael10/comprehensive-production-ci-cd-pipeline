@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -euo pipefail
+set -eo pipefail
 
 ### CONFIGURATION ###
 K8S_USER=$(whoami)
@@ -42,7 +42,7 @@ rm minikube-linux-amd64
 
 ### 4️⃣ Start Minikube ###
 echo "🚀 Starting Minikube..."
-minikube start --driver=docker
+sudo minikube start --driver=docker --force
 
 ### 5️⃣ Install ArgoCD ###
 echo "🚀 Installing ArgoCD..."
@@ -56,7 +56,8 @@ kubectl patch svc argocd-server -n argocd -p '{"spec": {"type": "NodePort"}}'
 
 ### 6️⃣ Get ArgoCD Admin Password ###
 echo "🔑 ArgoCD admin password:"
-kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d && echo
+ARGOCD_PASSWORD=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
+echo "${ARGOCD_PASSWORD}"
 
 ### 7️⃣ Install Helm & Cert-Manager ###
 echo "📦 Installing Cert-Manager..."
@@ -133,24 +134,25 @@ rm argocd-linux-amd64
 
 ### 🔑 Login to ArgoCD CLI ###
 echo "🔐 Logging into ArgoCD CLI..."
-ARGOCD_PASSWORD=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
-ARGOCD_IP=$(minikube service argocd-server -n argocd --url | sed 's/https:\/\///')
+ARGOCD_IP=$(minikube service argocd-server -n argocd --url | tr ' ' '\n' | head -n1 | sed 's|http://||')
 
 argocd login ${ARGOCD_IP} --username admin --password ${ARGOCD_PASSWORD} --insecure
 
 ### 🚀 Create and Sync App ###
 echo "🚀 Creating ArgoCD Application: $APP_NAME"
-if ! argocd app get ${APP_NAME} &>/dev/null; then
-  argocd app create ${APP_NAME} \
-    --repo ${GIT_REPO} \
-    --revision ${GIT_BRANCH} \
-    --path ${GIT_PATH} \
-    --dest-server https://kubernetes.default.svc \
-    --dest-namespace default
-fi
+argocd app create ${APP_NAME} \
+  --repo ${GIT_REPO} \
+  --revision ${GIT_BRANCH} \
+  --path ${GIT_PATH} \
+  --dest-server https://kubernetes.default.svc \
+  --dest-namespace default \
+  --server ${ARGOCD_IP} --insecure
 
-argocd app sync ${APP_NAME}
-argocd app wait ${APP_NAME}
+argocd app set ${APP_NAME} --sync-policy automated --server ${ARGOCD_IP} --insecure
+argocd app sync ${APP_NAME} --server ${ARGOCD_IP} --insecure
+argocd app wait ${APP_NAME} --server ${ARGOCD_IP} --insecure
 
 echo "🎉 Deployment complete! Visit: https://${ARGOCD_DOMAIN} to access ArgoCD UI."
-sleep 180s
+
+sleep 10s
+
