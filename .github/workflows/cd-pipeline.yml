@@ -59,24 +59,15 @@ jobs:
           git push origin HEAD:git-actions-pipeline
           echo "changed=true" >> $GITHUB_OUTPUT
 
-      - name: Configure AWS credentials
-        if: steps.commit_push.outputs.changed == 'true'
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWSID }}
-          aws-secret-access-key: ${{ secrets.AWSKEY }}
-          aws-region: us-east-1
-      
-      - name: Set kubeconfig for EKS
-        if: steps.commit_push.outputs.changed == 'true'
-        run: aws eks update-kubeconfig --name your-cluster-name
-
-
       - name: Show cluster info
         if: steps.commit_push.outputs.changed == 'true'
         run: kubectl cluster-info
 
-      - name: Deploy to cluster
+      - name: Ensure kubectl context is set to minikube
+        if: steps.commit_push.outputs.changed == 'true'
+        run: kubectl config use-context minikube
+
+      - name: Deploy to local Kubernetes cluster
         if: steps.commit_push.outputs.changed == 'true'
         run: kubectl apply -f argocd/deployment.yaml
 
