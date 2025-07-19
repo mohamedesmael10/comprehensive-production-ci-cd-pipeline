@@ -26,7 +26,7 @@ echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.
 sudo apt-get update
 sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
 sudo systemctl enable --now docker
-
+sudo usermod -aG docker $USER
 ### 2️⃣ Install kubectl ###
 echo "📦 Installing kubectl..."
 KUBECTL_VERSION=$(curl -sL https://dl.k8s.io/release/stable.txt)
