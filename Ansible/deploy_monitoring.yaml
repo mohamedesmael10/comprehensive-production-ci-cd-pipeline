@@ -2,56 +2,52 @@
 - name: Setup monitoring stack on local machine
   hosts: localhost
   connection: local
-  become: true
+  become: true  
   become_method: sudo
   become_user: root
-  gather_facts: true
+  gather_facts: true  
 
   tasks:
-
     - name: Ensure K3s and ArgoCD script is executable
       file:
-        path: "../argocd/configs/setup_k3s_argocd.sh"
+        path: "../argocd/configs/setup_k3s_argocd.sh" 
         mode: '0755'
+      become: true
 
     - name: Ensure cAdvisor and Jenkins setup script is executable
       file:
-        path: "../prometheus/setup_cadvisor.sh"
+        path: "../prometheus/setup_cadvisor.sh"  
         mode: '0755'
+      become: true
 
     - name: Ensure Node Exporter setup script is executable
       file:
-        path: "../prometheus/setup_node_exporter.sh"
+        path: "../prometheus/setup_node_exporter.sh"  
         mode: '0755'
+      become: true
 
     - name: Ensure Grafana setup script is executable
       file:
-        path: "../prometheus/setup_grafana.sh"
+        path: "../prometheus/setup_grafana.sh"  
         mode: '0755'
+      become: true
 
-    - name: Add root user to docker group using user module
-      user:
-        name: root
-        group: docker
-        append: yes
-
-    - name: Also add $USER to docker group shell
-      shell: |
-        usermod -aG docker $USER
-
-    - name: Run K3s and ArgoCD setup script in docker group session
-      shell: |
-        echo "bash ../argocd/configs/setup_k3s_argocd.sh" | newgrp docker
+    - name: Setup K3s and ArgoCD
+      script: "../argocd/configs/setup_k3s_argocd.sh"
+      become: true
       ignore_errors: yes
 
     - name: Setup cAdvisor and Jenkins
-      script: "../prometheus/setup_cadvisor.sh"
-      ignore_errors: yes
+      script: "../prometheus/setup_cadvisor.sh"  
+      become: true
+      ignore_errors: yes  
 
     - name: Setup Node Exporter
-      script: "../prometheus/setup_node_exporter.sh"
+      script: "../prometheus/setup_node_exporter.sh"  
+      become: true
       ignore_errors: yes
 
     - name: Setup Grafana
-      script: "../prometheus/setup_grafana.sh"
+      script: "../prometheus/setup_grafana.sh"  
+      become: true
       ignore_errors: yes
