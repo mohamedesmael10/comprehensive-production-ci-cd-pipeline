@@ -121,4 +121,15 @@ curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/lat
 sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
 rm argocd-linux-amd64
 
-echo "🎉 All done! ArgoCD and Kubernetes are ready on Minikube."
+### 🚀 Create and Sync ArgoCD App ###
+echo "🚀 Creating and Syncing ArgoCD Application..."
+argocd app create my-app \
+  --repo https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline.git \
+  --revision git-actions-pipeline \
+  --path argocd \
+  --dest-server https://kubernetes.default.svc \
+  --dest-namespace default
+
+argocd app sync my-app
+
+echo "🎉 All done! ArgoCD and your app are deployed on Minikube."
