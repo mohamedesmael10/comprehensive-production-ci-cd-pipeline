@@ -15,6 +15,14 @@ on:
         options:
           - 'true'
           - 'false'
+      install_argocd:
+        description: 'Install ArgoCD in CD pipeline?'
+        required: false
+        type: choice
+        default: 'false'
+        options:
+          - 'true'
+          - 'false'
 
 env:
   APP_NAME: comprehensive-production-ci-cd-pipeline-github-actions
@@ -101,7 +109,6 @@ jobs:
           image-ref: ${{ secrets.DOCKERUSER }}/${{ env.APP_NAME }}:latest
           exit-code: 0
           severity: HIGH,CRITICAL
-          
 
       - name: Push Docker Image
         run: |
@@ -126,4 +133,10 @@ jobs:
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer $GITHUB_TOKEN" \
             https://api.github.com/repos/mohamedesmael10/comprehensive-production-ci-cd-pipeline/actions/workflows/cd-pipeline.yml/dispatches \
-            -d '{"ref":"git-actions-pipeline","inputs":{"image_tag":"'"${{ github.event.inputs.release }}-${{ github.run_number }}"'"}}'
+            -d '{
+              "ref": "git-actions-pipeline",
+              "inputs": {
+                "image_tag": "'"${{ github.event.inputs.release }}-${{ github.run_number }}"'",
+                "install_argocd": "'"${{ github.event.inputs.install_argocd }}"'"
+              }
+            }'
