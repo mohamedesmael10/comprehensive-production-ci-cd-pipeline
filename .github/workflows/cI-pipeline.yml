@@ -67,7 +67,8 @@ jobs:
         id: quality-gate
         uses: sonarsource/sonarqube-quality-gate-action@v1.1.0
         with:
-          scan_metadata_report_file: .scannerwork/report-task.txt
+          # correct camelCase key:
+          scanMetadataReportFile: .scannerwork/report-task.txt
         env:
           SONAR_TOKEN: ${{ secrets.SONARTOKEN }}
 
