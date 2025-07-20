@@ -72,11 +72,11 @@ The **CI Pipeline** (`.github/workflows/ci-pipeline.yml`) performs:
 | Push Docker Image              | Pushes both `${IMAGE_TAG}` and `latest` tags to Docker Hub      |
 | Trigger CD Pipeline            | Calls downstream CD pipeline with the new image tag             |
 
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/(8).png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/git-actions-pipeline/Screenshots/(8).png)
 
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/(4).png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/git-actions-pipeline/Screenshots/(4).png)
 
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/(10).png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/git-actions-pipeline/Screenshots/(10).png)
 
 ---
 
@@ -98,11 +98,11 @@ The **CD Pipeline** (`.github/workflows/cd-pipeline.yml`) performs:
 | Push Manifest           | Commits and pushes manifest to GitHub           |
 | Notifications           | Emails and logs status                          |
 
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/(7).png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/git-actions-pipeline/Screenshots/(7).png)
 
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/(5).png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/git-actions-pipeline/Screenshots/(5).png)
 
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/(9).png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/git-actions-pipeline/Screenshots/(9).png)
 
 ---
 
@@ -126,27 +126,26 @@ ansible-playbook Ansible/deploy_monitoring.yaml
 
 🔗 Access ArgoCD: [https://mohamedesmaelargocd.work.gd](https://mohamedesmaelargocd.work.gd)
 
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/(15).png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/git-actions-pipeline/Screenshots/(15).png)
 
 ---
 
 
 ## CI/CD Workflow Diagram
 
-![Workflow Diagram 1](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/(11).png)
-
-![Workflow Diagram 2](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/(12).png)
+![Workflow Diagram 1](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/git-actions-pipeline/Screenshots/(11).png)
+![Workflow Diagram 2](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/git-actions-pipeline/Screenshots/(12).png)
 
 ---
 
 ## Additional Screenshots
 
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/(6).png)
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/(3).png)
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/(2).png)
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/(1).png)
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/(14).png)
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/main/Screenshots/(13).png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/git-actions-pipeline/Screenshots/(6).png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/git-actions-pipeline/Screenshots/(3).png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/git-actions-pipeline/Screenshots/(2).png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/git-actions-pipeline/Screenshots/(1).png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/git-actions-pipeline/Screenshots/(14).png)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/git-actions-pipeline/Screenshots/(13).png)
 ---
 
 ## Credits
