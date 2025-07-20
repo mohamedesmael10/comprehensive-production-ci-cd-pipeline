@@ -10,7 +10,7 @@ EMAIL="mohamed.2714104@gmail.com"
 GIT_REPO="https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline.git"
 GIT_BRANCH="git-actions-pipeline"
 GIT_PATH="argocd"
-APP_NAME="my-app"
+APP_NAME="comprehensive-production-ci-cd-pipeline-github-actions"
 
 echo "💡 Starting setup for local GitOps with ArgoCD on Minikube..."
 
