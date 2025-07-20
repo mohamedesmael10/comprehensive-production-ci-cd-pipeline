@@ -51,11 +51,17 @@ Trigger the CI pipeline by running the workflow on GitHub Actions (`CI Pipeline`
 ## 1. CI Pipeline
 
 The **CI Pipeline** (`.github/workflows/ci-pipeline.yml`) performs:
+
 ✅ Build & Test
+
 ✅ Static Code Analysis via SonarCloud
+
 ✅ Vulnerability Scans (source & image) via Trivy
+
 ✅ Docker Image Build & Push
+
 ✅ GitHub Actions Notifications
+
 ✅ Trigger CD Pipeline
 
 ### Stages
