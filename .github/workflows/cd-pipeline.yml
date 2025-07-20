@@ -33,23 +33,6 @@ jobs:
       - name: Deploy Monitoring Stack & Print ArgoCD App Info
         run: |
           ansible-playbook Ansible/deploy_monitoring.yaml
-      
-          ARGOCD_DOMAIN="mohamedesmaelargocd.work.gd"
-          APP_NAME="comprehensive-production-ci-cd-pipeline-github-actions"
-          ARGOCD_PASSWORD=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
-      
-          echo "Logging into ArgoCD at ${ARGOCD_DOMAIN}:30443"
-          argocd login "${ARGOCD_DOMAIN}:30443" --username admin --password "$ARGOCD_PASSWORD" --insecure --grpc-web || true
-      
-          echo "=== APP GET ==="
-          argocd app get "${APP_NAME}"
-      
-          echo "=== APP HISTORY ==="
-          argocd app history "${APP_NAME}"
-      
-          echo "=== APP DIFF ==="
-          argocd app diff "${APP_NAME}"
-
 
       - name: Update Deployment Tag
         run: |
