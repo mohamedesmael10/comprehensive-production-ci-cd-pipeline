@@ -5,7 +5,7 @@ on:
     inputs:
       release:
         description: 'Release version'
-        required: false
+        required: true
         default: '1.0.0'
       run_cd:
         description: 'Trigger CD after build?'
@@ -142,3 +142,65 @@ jobs:
                -H "Authorization: Bearer $GITHUB_TOKEN" \
                https://api.github.com/repos/mohamedesmael10/comprehensive-production-ci-cd-pipeline/actions/workflows/cd-pipeline.yml/dispatches \
                -d '{"ref":"git-actions-pipeline","inputs":{"image_tag":"'"${{ github.event.inputs.release }}-${{ github.run_number }}"'"}}'
+name: CI Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: 'Release version'
+        required: false
+        default: '1.0.0'
+      run_cd:
+        description: 'Trigger CD after build?'
+        required: false
+        type: choice
+        default: 'false'
+        options:
+          - 'true'
+          - 'false'
+
+env:
+  APP_NAME: comprehensive-production-ci-cd-pipeline-github-actions
+
+jobs:
+  build-and-scan:
+    name: Build, Scan & SonarCloud Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Build & Test
+        run: mvn clean package
+
+      - name: Copy project dependencies
+        run: mvn dependency:copy-dependencies
+
+      - name: Trivy File Scan
+        uses: aquasecurity/trivy-action@0.32.0
+        with:
+          scan-type: fs
+          input: .
+          exit-code: 0
+          severity: HIGH,CRITICAL
+          skip-dirs: target,.git
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v2
+        with:
+          args: >
+            -Dsonar.projectKey=comprehensive-production-ci-cd-pipeline
+            -Dsonar.organization=mohamedesmael10
+            -Dsonar.host.url=https://sonarcloud.io
+            -Dsonar.java.binaries=target
+            -Dsonar.java.libraries=target/dependency/*.jar
