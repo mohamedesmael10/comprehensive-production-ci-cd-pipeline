@@ -30,7 +30,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ansible
 
-      - name: Deploy Monitoring Stack & install
+      - name: Deploy Monitoring Stack
         run: |
           ansible-playbook Ansible/deploy_monitoring.yaml
 
@@ -39,7 +39,6 @@ jobs:
           echo "Updating argocd/deployment.yaml to use image_tag=${{ github.event.inputs.image_tag }}"
           IMAGE_TAG=${{ github.event.inputs.image_tag }}
           sed -i "s|\(image:.*${{ env.APP_NAME }}:\).*|\1${IMAGE_TAG}|g" argocd/deployment.yaml
-          echo "Updated deployment.yaml:"
           cat argocd/deployment.yaml
 
       - name: Commit & Push updated manifest
@@ -59,17 +58,16 @@ jobs:
           git push origin HEAD:git-actions-pipeline
           echo "changed=true" >> $GITHUB_OUTPUT
 
-      - name: Show cluster info
-        if: steps.commit_push.outputs.changed == 'true'
-        run: kubectl cluster-info
+      - name: Print ArgoCD App Info
+        run: |
+          echo "Querying ArgoCD via domain: https://${ARGOCD_DOMAIN}"
+          ARGOCD_PASSWORD=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
 
-      - name: Ensure kubectl context is set to minikube
-        if: steps.commit_push.outputs.changed == 'true'
-        run: kubectl config use-context minikube
-
-      - name: Deploy to local Kubernetes cluster
-        if: steps.commit_push.outputs.changed == 'true'
-        run: kubectl apply -f argocd/deployment.yaml
+          argocd login "${ARGOCD_DOMAIN}" --username admin --password "$ARGOCD_PASSWORD" --insecure --grpc-web || true
+          argocd app get "${APP_NAME}" || echo "App ${APP_NAME} not found in ArgoCD"
+        env:
+          ARGOCD_DOMAIN: mohamedesmaelargocd.work.gd
+          APP_NAME: ${{ env.APP_NAME }}
 
       - name: Notify on Success
         if: ${{ success() }}
