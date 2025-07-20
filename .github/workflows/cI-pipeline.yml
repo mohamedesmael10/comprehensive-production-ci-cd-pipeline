@@ -72,7 +72,8 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONARTOKEN }}
 
       - name: Print SonarCloud Quality Gate result
-        run: echo "SonarCloud Quality Gate Status: ${{ steps.quality-gate.outcome }}"
+        run: |
+        echo "SonarCloud Quality Gate Status: ${{ steps.quality-gate.outcome }}"
 
   docker:
     name: Build, Scan & Push Docker Image
