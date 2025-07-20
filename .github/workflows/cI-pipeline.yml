@@ -3,6 +3,10 @@ name: CI Pipeline
 on:
   workflow_dispatch:
     inputs:
+      release:
+        description: 'Release version'
+        required: false
+        default: '1.0.0'
       run_cd:
         description: 'Trigger CD after build?'
         required: false
@@ -68,11 +72,10 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONARTOKEN }}
 
       - name: Print SonarCloud Quality Gate result
-        run: |
-          echo "SonarCloud Quality Gate Status: ${{ steps.quality-gate.outcome }}"
+        run: echo "SonarCloud Quality Gate Status: ${{ steps.quality-gate.outcome }}"
 
   docker:
-    name: Build, Scan & Push Image
+    name: Build, Scan & Push Docker Image
     needs: build-and-scan
     runs-on: ubuntu-latest
 
@@ -105,13 +108,20 @@ jobs:
           severity: HIGH,CRITICAL
 
       - name: Print Trivy scan result
-        run: |
-          echo "Trivy scan completed for image: ${{ secrets.DOCKERUSER }}/${{ env.APP_NAME }}:latest"
+        run: echo "Trivy scan completed for image: ${{ secrets.DOCKERUSER }}/${{ env.APP_NAME }}:latest"
 
       - name: Push Docker Image
         run: |
           docker push ${{ secrets.DOCKERUSER }}/${{ env.APP_NAME }}:${{ github.event.inputs.release }}-${{ github.run_number }}
           docker push ${{ secrets.DOCKERUSER }}/${{ env.APP_NAME }}:latest
+
+      - name: Notify on Success
+        if: ${{ success() }}
+        run: echo "CI Pipeline completed successfully; image_tag=${{ github.event.inputs.release }}-${{ github.run_number }}"
+
+      - name: Notify on Failure
+        if: ${{ failure() }}
+        run: echo "CI Pipeline failed. Check logs for details."
 
   trigger-cd:
     name: Trigger CD Workflow
@@ -123,12 +133,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Trigger CD via GitHub API
+      - name: Dispatch CD pipeline
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
         run: |
-          curl -i -X POST \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer $GITHUB_TOKEN" \
-            https://api.github.com/repos/mohamedesmael10/comprehensive-production-ci-cd-pipeline/actions/workflows/cd-pipeline.yml/dispatches \
-            -d '{"ref":"git-actions-pipeline","inputs":{"image_tag":"'"${{ github.event.inputs.release }}-${{ github.run_number }}"'"}}'
+          curl -X POST \
+               -H "Accept: application/vnd.github+json" \
+               -H "Authorization: Bearer $GITHUB_TOKEN" \
+               https://api.github.com/repos/mohamedesmael10/comprehensive-production-ci-cd-pipeline/actions/workflows/cd-pipeline.yml/dispatches \
+               -d '{"ref":"git-actions-pipeline","inputs":{"image_tag":"'"${{ github.event.inputs.release }}-${{ github.run_number }}"'"}}'
