@@ -58,17 +58,6 @@ jobs:
           git push origin HEAD:git-actions-pipeline
           echo "changed=true" >> $GITHUB_OUTPUT
 
-      - name: Print ArgoCD App Info
-        run: |
-          echo "Querying ArgoCD via domain: https://${ARGOCD_DOMAIN}"
-          ARGOCD_PASSWORD=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
-
-          argocd login "${ARGOCD_DOMAIN}" --username admin --password "$ARGOCD_PASSWORD" --insecure --grpc-web || true
-          argocd app get "${APP_NAME}" || echo "App ${APP_NAME} not found in ArgoCD"
-        env:
-          ARGOCD_DOMAIN: mohamedesmaelargocd.work.gd
-          APP_NAME: ${{ env.APP_NAME }}
-
       - name: Notify on Success
         if: ${{ success() }}
         run: echo "CD Pipeline completed successfully for image_tag=${{ github.event.inputs.image_tag }}"
