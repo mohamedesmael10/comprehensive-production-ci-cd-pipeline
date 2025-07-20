@@ -3,7 +3,18 @@
 
 This project demonstrates a **production-grade CI/CD pipeline** with Jenkins, SonarQube, Docker, ArgoCD, Kubernetes, Prometheus, Grafana, and Ansible. It automates **build → test → analysis → containerization → deployment → monitoring** for a **Java 17+ Maven application**, following DevOps and GitOps best practices.
 
-Repository: [GitHub Link](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline)
+##  Project Links
+
+*  **Jenkins Project Link**: [Comprehensive Production CI/CD Pipeline - Jenkins](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/tree/main)
+
+You can also find the same project with **GitHub Actions** as the CI/CD tool:
+
+*  **GitHub Actions Project Link**: [Comprehensive Production CI/CD Pipeline - GitHub Actions](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/tree/git-actions-pipeline)
+
+
+You can also find the same project with **AWS CodePipeline** as the CI/CD tool:
+
+* **AWS CodePipeline Project Link**: [Comprehensive Production CI/CD Pipeline - AWS CodePipeline](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/tree/codepipeline)
 
 ---
 
