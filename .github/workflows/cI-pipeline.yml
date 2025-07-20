@@ -74,9 +74,8 @@ jobs:
       - name: Print SonarCloud Results
         run: |
           echo "SonarCloud Quality Gate result:"
-          echo "${{ steps.sonar_qg.outcome }}"
+          echo "${{ steps.quality-gate.outcome }}"
           echo "For full report, visit: https://sonarcloud.io/project/overview?id=comprehensive-production-ci-cd-pipeline"
-
 
   docker:
     name: Build, Scan & Push Docker Image
@@ -119,13 +118,31 @@ jobs:
           docker push ${{ secrets.DOCKERUSER }}/${{ env.APP_NAME }}:${{ github.event.inputs.release }}-${{ github.run_number }}
           docker push ${{ secrets.DOCKERUSER }}/${{ env.APP_NAME }}:latest
 
-      - name: Notify on Success
-        if: ${{ success() }}
-        run: echo "CI Pipeline completed successfully; image_tag=${{ github.event.inputs.release }}-${{ github.run_number }}"
+      - name: Send Email Notification
+        if: always()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: mohamed.esmael.jenkins@gmail.com
+          password: ${{ secrets.SMTPPASSWORD }}
+          subject: |
+            CI Pipeline Status: ${{ job.status }}
+          to: mohamed.2714104@gmail.com
+          from: mohamed.esmael.jenkins@gmail.com
+          body: |
+            Hello,
 
-      - name: Notify on Failure
-        if: ${{ failure() }}
-        run: echo "CI Pipeline failed. Check logs for details."
+            The CI Pipeline has completed.
+
+            Status: ${{ job.status }}
+            Image tag: ${{ github.event.inputs.release }}-${{ github.run_number }}
+
+            Repository: ${{ github.repository }}
+            Workflow run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            Regards,
+            CI/CD Bot
 
   trigger-cd:
     name: Trigger CD Workflow
