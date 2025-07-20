@@ -74,9 +74,9 @@ The **CI Pipeline** (`.github/workflows/ci-pipeline.yml`) performs:
 
 ![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/git-actions-pipeline/Screenshots/(8).png)
 
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/git-actions-pipeline/Screenshots/(4).png)
-
 ![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/git-actions-pipeline/Screenshots/(10).png)
+
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/git-actions-pipeline/Screenshots/(4).png)
 
 ---
 
@@ -100,9 +100,9 @@ The **CD Pipeline** (`.github/workflows/cd-pipeline.yml`) performs:
 
 ![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/git-actions-pipeline/Screenshots/(7).png)
 
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/git-actions-pipeline/Screenshots/(5).png)
-
 ![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/git-actions-pipeline/Screenshots/(9).png)
+
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/git-actions-pipeline/Screenshots/(5).png)
 
 ---
 
