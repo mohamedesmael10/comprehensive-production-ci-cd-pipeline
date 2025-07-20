@@ -89,9 +89,13 @@ The **CI Pipeline** (`.github/workflows/ci-pipeline.yml`) performs:
 ## 2. CD Pipeline
 
 The **CD Pipeline** (`.github/workflows/cd-pipeline.yml`) performs:
+
 ✅ Deploy monitoring stack (Ansible)
+
 ✅ Update deployment manifest in GitHub
+
 ✅ Commit & push updated manifest
+
 ✅ Notifications
 
 ### Stages
@@ -117,11 +121,17 @@ The **CD Pipeline** (`.github/workflows/cd-pipeline.yml`) performs:
 The Ansible playbooks fully automate **both ArgoCD setup and monitoring stack deployment**.
 
 ✅ K3s Kubernetes cluster installation
+
 ✅ ArgoCD installation with HTTPS ingress
+
 ✅ TLS certificates with cert-manager
+
 ✅ ArgoCD CLI installation and login
+
 ✅ cAdvisor & Jenkins: monitored by Prometheus
+
 ✅ Node Exporter: installed and configured
+
 ✅ Grafana: installed and dashboards imported
 
 Run the playbook:
