@@ -109,7 +109,7 @@ jobs:
           severity: HIGH,CRITICAL
 
       - name: Print Trivy scan result
-        run: echo "Trivy scan completed for image: ${{ secrets.DOCKERUSER }}/${{ env.APP_NAME }}:latest"
+        run: echo "Trivy scan completed for image:${{ secrets.DOCKERUSER }}/${{ env.APP_NAME }}:latest"
 
       - name: Push Docker Image
         run: |
