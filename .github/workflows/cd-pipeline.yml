@@ -65,3 +65,29 @@ jobs:
       - name: Notify on Failure
         if: ${{ failure() }}
         run: echo "CD Pipeline failed. Check logs for details."
+
+      - name: Send Email Notification
+        if: always()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: mohamed.esmael.jenkins@gmail.com
+          password: ${{ secrets.SMTPPASSWORD }}
+          subject: |
+            CD Pipeline Status: ${{ job.status }}
+          to: mohamed.2714104@gmail.com
+          from: mohamed.esmael.jenkins@gmail.com
+          body: |
+            Hello,
+
+            The CD Pipeline has completed.
+
+            Status: ${{ job.status }}
+            Image tag deployed: ${{ github.event.inputs.image_tag }}
+
+            Repository: ${{ github.repository }}
+            Workflow run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            Regards,
+            CI/CD Bot
