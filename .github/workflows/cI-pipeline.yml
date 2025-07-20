@@ -3,10 +3,6 @@ name: CI Pipeline
 on:
   workflow_dispatch:
     inputs:
-      release:
-        description: 'Release version'
-        required: false
-        default: '1.0.0'
       run_cd:
         description: 'Trigger CD after build?'
         required: false
@@ -30,15 +26,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Trivy File Scan
-        uses: aquasecurity/trivy-action@0.32.0
-        with:
-          scan-type: fs
-          input: .
-          exit-code: 0
-          severity: HIGH,CRITICAL
-          skip-dirs: target,.git
-
       - name: Setup Java 17
         uses: actions/setup-java@v3
         with:
@@ -50,6 +37,15 @@ jobs:
 
       - name: Copy project dependencies
         run: mvn dependency:copy-dependencies
+
+      - name: Trivy File Scan
+        uses: aquasecurity/trivy-action@0.32.0
+        with:
+          scan-type: fs
+          input: .
+          exit-code: 0
+          severity: HIGH,CRITICAL
+          skip-dirs: target,.git
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2
@@ -64,11 +60,16 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONARTOKEN }}
 
       - name: SonarCloud Quality Gate Check
+        id: quality-gate
         uses: sonarsource/sonarqube-quality-gate-action@v1.1.0
         with:
           scanMetadataReportFile: .scannerwork/report-task.txt
         env:
           SONAR_TOKEN: ${{ secrets.SONARTOKEN }}
+
+      - name: Print SonarCloud Quality Gate result
+        run: |
+          echo "SonarCloud Quality Gate Status: ${{ steps.quality-gate.outcome }}"
 
   docker:
     name: Build, Scan & Push Image
@@ -95,13 +96,17 @@ jobs:
             ${{ secrets.DOCKERUSER }}/${{ env.APP_NAME }}:latest
 
       - name: Trivy Image Scan
+        id: trivy-scan
         uses: aquasecurity/trivy-action@0.32.0
         with:
           scan-type: image
           image-ref: ${{ secrets.DOCKERUSER }}/${{ env.APP_NAME }}:latest
           exit-code: 0
           severity: HIGH,CRITICAL
-          
+
+      - name: Print Trivy scan result
+        run: |
+          echo "Trivy scan completed for image: ${{ secrets.DOCKERUSER }}/${{ env.APP_NAME }}:latest"
 
       - name: Push Docker Image
         run: |
