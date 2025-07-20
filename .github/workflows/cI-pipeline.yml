@@ -71,9 +71,12 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONARTOKEN }}
 
-      - name: Print SonarCloud Quality Gate result
+      - name: Print SonarCloud Results
         run: |
-        echo "SonarCloud Quality Gate Status: ${{ steps.quality-gate.outcome }}"
+          echo "SonarCloud Quality Gate result:"
+          echo "${{ steps.sonar_qg.outcome }}"
+          echo "For full report, visit: https://sonarcloud.io/project/overview?id=comprehensive-production-ci-cd-pipeline"
+
 
   docker:
     name: Build, Scan & Push Docker Image
