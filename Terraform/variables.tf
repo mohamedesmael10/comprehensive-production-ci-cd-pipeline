@@ -1,56 +1,54 @@
 variable "aws_region" {
-  description = "AWS Region"
   type        = string
+  description = "AWS Region to deploy resources"
   default     = "us-east-1"
 }
 
 variable "project_name" {
-  description = "Project prefix for resources"
   type        = string
-  default     = "comp-prod-pipeline"
+  description = "Project name prefix"
+  default     = "comprehensive-production-ci-cd-pipeline"
 }
 
 variable "github_owner" {
-  description = "GitHub user/org"
   type        = string
+  description = "GitHub repository owner"
 }
 
 variable "github_repo" {
-  description = "GitHub repository name"
   type        = string
+  description = "GitHub repository name"
 }
 
 variable "github_branch" {
-  description = "Branch to build/deploy"
   type        = string
-  default     = "git-actions-pipeline"
+  description = "GitHub branch to track"
+  default     = "main"
 }
 
-variable "github_oauth_token" {
-  description = "GitHub OAuth token"
+variable "codeconnection_arn" {
   type        = string
-  sensitive   = true
-}
-
-variable "dockerhub_user" {
-  description = "Docker Hub username"
-  type        = string
-}
-
-variable "dockerhub_pass" {
-  description = "Docker Hub password"
-  type        = string
-  sensitive   = true
+  description = "CodeStar connection ARN for GitHub integration"
 }
 
 variable "sonar_token_param" {
-  description = "SSM Parameter name for Sonar token"
   type        = string
-  default     = "/sonar/token"
+  description = "SSM Parameter Store name for SonarCloud token"
+}
+
+variable "dockerhub_user" {
+  type        = string
+  description = "Docker Hub username"
+}
+
+variable "dockerhub_pass" {
+  type        = string
+  description = "Docker Hub password"
+  sensitive   = true
 }
 
 variable "default_image_tag" {
-  description = "Default image tag for CD"
   type        = string
+  description = "Default Docker image tag for CD deploy if not passed"
   default     = "latest"
 }
