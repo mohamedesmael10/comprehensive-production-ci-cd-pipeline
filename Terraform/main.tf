@@ -51,6 +51,23 @@ data "aws_iam_policy_document" "codepipeline_assume" {
   }
 }
 
+resource "aws_iam_role_policy" "codepipeline_connection" {
+  name = "AllowUseCodeStarConnection"
+  role = aws_iam_role.codepipeline_role.name
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect   = "Allow",
+        Action   = "codestar-connections:UseConnection",
+        Resource = "arn:aws:codeconnections:us-east-1:025066251600:connection/ba2ef8c3-98a9-48f9-949c-e8353efeb72d"
+      }
+    ]
+  })
+}
+
+
 resource "aws_iam_role" "codepipeline_role" {
   name               = "${var.project_name}-codepipeline-role"
   assume_role_policy = data.aws_iam_policy_document.codepipeline_assume.json

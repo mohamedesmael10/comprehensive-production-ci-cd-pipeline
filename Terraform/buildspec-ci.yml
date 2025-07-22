@@ -3,7 +3,9 @@ version: 0.2
 env:
   variables:
     APP_NAME: "comprehensive-production-ci-cd-pipeline-codepipeline"
-    DOCKERHUB_USER: "mohamedesmael10"
+    AWS_REGION: "us-east-1"
+    AWS_ACCOUNT_ID: "025066251600"     
+    ECR_REPO_URI: "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${APP_NAME}"
   exported-variables:
     - IMAGE_TAG
 
@@ -12,56 +14,44 @@ phases:
     runtime-versions:
       java: corretto17
     commands:
-      - set -e
-      - echo "Installing tools: Trivy, SonarScanner, Docker..."
-      - apt-get update && apt-get install -y git unzip curl docker.io
-      - |
-        echo "Starting Docker daemon..."
-        systemctl start docker || service docker start || (dockerd &)
-        for i in $(seq 1 30); do
-          docker info && break
-          echo "Waiting for Docker to start..."
-          sleep 1
-        done
+      - echo "Installing required tools..."
+      - apt-get update && apt-get install -y git unzip curl docker.io jq
+      - (service docker start || systemctl start docker || dockerd &) && sleep 5
+      - for i in $(seq 1 30); do docker info && break || sleep 1; done
 
-      # Install Trivy
+      - echo "Installing Trivy..."
       - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
 
-      # Install SonarScanner
+      - echo "Installing SonarScanner..."
       - curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.8.0.2856-linux.zip
-      - unzip sonar-scanner.zip && mv sonar-scanner-*/ /opt/sonar-scanner
-      - rm sonar-scanner.zip
+      - unzip sonar-scanner.zip && mv sonar-scanner-*/ /opt/sonar-scanner && rm sonar-scanner.zip
       - export PATH="/opt/sonar-scanner/bin:$PATH"
-      - echo "PATH updated with SonarScanner: $PATH"
 
   pre_build:
     commands:
-      - set -e
-      - echo "Logging in to Docker Hub..."
-      - echo "$DOCKERHUB_PASS" | docker login --username "$DOCKERHUB_USER" --password-stdin
+      - echo "Logging in to Amazon ECR..."
+      - aws --version
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin "$ECR_REPO_URI"
+      - export IMAGE_TAG="$CODEBUILD_BUILD_NUMBER"
+      - echo "IMAGE_TAG=$IMAGE_TAG"
 
-      - echo "Running Trivy scan on source directory..."
+      - echo "Running Trivy filesystem scan..."
       - trivy fs --exit-code 0 --severity HIGH,CRITICAL --skip-dirs target,.git .
 
   build:
     commands:
-      - set -e
-      - echo "Building Java app with Maven..."
+      - echo "Building project with Maven..."
       - mvn clean package
+      - mvn test
       - mvn dependency:copy-dependencies
 
-      - echo "Setting IMAGE_TAG to CodeBuild build number..."
-      - export IMAGE_TAG="$CODEBUILD_BUILD_NUMBER"
-      - echo "IMAGE_TAG=$IMAGE_TAG"
-
-      - echo "Building Docker image..."
-      - docker build -t "$DOCKERHUB_USER/$APP_NAME:$IMAGE_TAG" .
-      - docker tag "$DOCKERHUB_USER/$APP_NAME:$IMAGE_TAG" "$DOCKERHUB_USER/$APP_NAME:latest"
+      - echo "Building and tagging Docker image..."
+      - docker build -t "$ECR_REPO_URI:$IMAGE_TAG" .
+      - docker tag "$ECR_REPO_URI:$IMAGE_TAG" "$ECR_REPO_URI:latest"
 
   post_build:
     commands:
-      - set -e
-      - echo "Running SonarCloud scan..."
+      - echo "Running SonarCloud analysis..."
       - sonar-scanner \
           -Dsonar.projectKey=comprehensive-production-ci-cd-pipeline \
           -Dsonar.organization=mohamedesmael10 \
@@ -70,20 +60,23 @@ phases:
           -Dsonar.java.libraries=target/dependency/*.jar \
           -Dsonar.login="$SONAR_TOKEN"
 
-      - echo "Fetching SonarCloud Quality Gate status..."
+      - echo "Checking SonarCloud Quality Gate..."
       - |
-        REPORT=$(curl -s -u "$SONAR_TOKEN": \
-          "https://sonarcloud.io/api/qualitygates/project_status?projectKey=comprehensive-production-ci-cd-pipeline")
+        sleep 10
+        REPORT=$(curl -s -u "$SONAR_TOKEN": "https://sonarcloud.io/api/qualitygates/project_status?projectKey=comprehensive-production-ci-cd-pipeline")
         echo "$REPORT"
+        STATUS=$(echo "$REPORT" | jq -r '.projectStatus.status')
+        if [ "$STATUS" != "OK" ]; then
+          echo "Quality gate failed: $STATUS"
+          exit 1
+        fi
 
-      - echo "Scanning Docker image for vulnerabilities..."
-      - trivy image --exit-code 0 --severity HIGH,CRITICAL "$DOCKERHUB_USER/$APP_NAME:$IMAGE_TAG"
+      - echo "Running Trivy scan on Docker image..."
+      - trivy image --exit-code 0 --severity HIGH,CRITICAL "$ECR_REPO_URI:$IMAGE_TAG"
 
-      - echo "Pushing Docker images to Docker Hub..."
-      - docker push "$DOCKERHUB_USER/$APP_NAME:$IMAGE_TAG"
-      - docker push "$DOCKERHUB_USER/$APP_NAME:latest"
-
-      - echo "Exported IMAGE_TAG=$IMAGE_TAG for downstream CD pipeline"
+      - echo "Pushing image to Amazon ECR..."
+      - docker push "$ECR_REPO_URI:$IMAGE_TAG"
+      - docker push "$ECR_REPO_URI:latest"
 
 artifacts:
   files:
