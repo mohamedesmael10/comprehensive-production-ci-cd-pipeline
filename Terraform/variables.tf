@@ -31,24 +31,20 @@ variable "codeconnection_arn" {
   description = "CodeStar connection ARN for GitHub integration"
 }
 
-variable "sonar_token_param" {
-  type        = string
-  description = "SSM Parameter Store name for SonarCloud token"
-}
 
 variable "dockerhub_user" {
   type        = string
   description = "Docker Hub username"
 }
 
-variable "dockerhub_pass" {
-  type        = string
-  description = "Docker Hub password"
-  sensitive   = true
-}
 
 variable "default_image_tag" {
   type        = string
   description = "Default Docker image tag for CD deploy if not passed"
   default     = "latest"
+}
+
+variable "ecr_repo_uri" {
+  type        = string
+  description = "Docker Hub username"
 }

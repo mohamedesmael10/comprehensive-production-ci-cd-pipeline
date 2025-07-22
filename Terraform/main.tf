@@ -12,6 +12,7 @@ resource "random_id" "bucket_suffix" {
 
 resource "aws_s3_bucket" "artifact_bucket" {
   bucket = "${var.project_name}-artifacts-${random_id.bucket_suffix.hex}"
+  force_destroy = true
 }
 
 # IAM Role for CodeBuild
@@ -67,6 +68,23 @@ resource "aws_iam_role_policy" "codepipeline_connection" {
   })
 }
 
+resource "aws_iam_role_policy" "codebuild_secrets_access" {
+  name = "AllowSecretsManagerAccess"
+  role = aws_iam_role.codebuild_role.name
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ],
+        Resource = "arn:aws:secretsmanager:us-east-1:025066251600:secret:comp-prod-pipeline-secret*"
+      }
+    ]
+  })
+}
 
 resource "aws_iam_role" "codepipeline_role" {
   name               = "${var.project_name}-codepipeline-role"
@@ -104,11 +122,6 @@ resource "aws_codebuild_project" "ci_build" {
     type            = "LINUX_CONTAINER"
     privileged_mode = true
 
-    environment_variable {
-      name  = "SONAR_TOKEN"
-      type  = "PARAMETER_STORE"
-      value = var.sonar_token_param
-    }
 
     environment_variable {
       name  = "DOCKERHUB_USER"
@@ -118,8 +131,14 @@ resource "aws_codebuild_project" "ci_build" {
 
     environment_variable {
       name  = "DOCKERHUB_PASS"
-      type  = "PLAINTEXT"
-      value = var.dockerhub_pass
+      type  = "SECRETS_MANAGER"
+      value = "comp-prod-pipeline-secret:dockerhub_pass"
+    }
+
+    environment_variable {
+      name  = "SONAR_TOKEN"
+      type  = "SECRETS_MANAGER"
+      value = "comp-prod-pipeline-secret:sonar_token_param"
     }
   }
 
@@ -239,6 +258,16 @@ resource "aws_codepipeline" "app_pipeline" {
             name  = "DOCKERHUB_USER"
             type  = "PLAINTEXT"
             value = var.dockerhub_user
+          },
+          {
+            name  = "AWS_REGION"
+            type  = "PLAINTEXT"
+            value = var.aws_region
+          },
+          {
+            name  = "ECR_REPO_URI"
+            type  = "PLAINTEXT"
+            value = var.ecr_repo_uri
           }
         ])
       }
