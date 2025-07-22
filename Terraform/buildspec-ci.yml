@@ -18,6 +18,7 @@ phases:
       - apt-get update && apt-get install -y git unzip curl docker.io jq
       - (service docker start || systemctl start docker || dockerd &) && sleep 5
       - for i in $(seq 1 30); do docker info && break || sleep 1; done
+      - echo "$DOCKERHUB_PASS" | docker login --username "$DOCKERHUB_USER" --password-stdin
       - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
       - curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.8.0.2856-linux.zip
       - unzip sonar-scanner.zip && mv sonar-scanner-*/ /opt/sonar-scanner && rm sonar-scanner.zip
