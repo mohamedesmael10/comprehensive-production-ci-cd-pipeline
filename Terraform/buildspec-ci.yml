@@ -45,9 +45,16 @@ phases:
       - docker tag "$ECR_REPO_URI:$IMAGE_TAG" "$ECR_REPO_URI:latest"
 
   post_build:
-    commands:
-      - echo " Running SonarCloud analysis..."
-      - sonar-scanner -Dsonar.projectKey=comprehensive-production-ci-cd-pipeline -Dsonar.organization=mohamedesmael10 -Dsonar.host.url=https://sonarcloud.io -Dsonar.java.binaries=target -Dsonar.java.libraries=target/dependency/*.jar -Dsonar.login="$SONAR_TOKEN"
+     commands:
+      - echo "Starting SonarCloud analysis..."
+      - sonar-scanner \
+        -Dsonar.projectKey=comprehensive-production-ci-cd-pipeline \
+        -Dsonar.organization=mohamedesmael10 \
+        -Dsonar.host.url=https://sonarcloud.io \
+        -Dsonar.java.binaries=target \
+        -Dsonar.java.libraries=target/dependency/*.jar \
+        -Dsonar.login=$SONAR_TOKEN
+
       - echo "Waiting for SonarCloud quality gate result..."
       - sleep 10
       - |
@@ -59,7 +66,7 @@ phases:
         else
           echo " Quality gate passed."
         fi
-      - echo "🔍 Scanning Docker image with Trivy..."
+      - echo "Scanning Docker image with Trivy..."
       - trivy image --exit-code 0 --severity HIGH,CRITICAL "$ECR_REPO_URI:$IMAGE_TAG"
       - echo " Pushing Docker images to ECR..."
       - docker push "$ECR_REPO_URI:$IMAGE_TAG"

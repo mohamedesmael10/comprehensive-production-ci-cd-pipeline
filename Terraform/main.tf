@@ -9,6 +9,30 @@ provider "aws" {
 resource "random_id" "bucket_suffix" {
   byte_length = 4
 }
+resource "aws_iam_policy" "codebuild_s3_access" {
+  name = "CodeBuildS3AccessPolicy"
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect   = "Allow",
+        Action   = [
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:GetObjectVersion",
+          "s3:GetBucketAcl",
+          "s3:GetBucketLocation"
+        ],
+        Resource = "arn:aws:s3:::comp-prod-pipeline-artifacts-6f2ead0c/*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "codebuild_s3_access_attachment" {
+  role       = aws_iam_role.codebuild_role.name
+  policy_arn = aws_iam_policy.codebuild_s3_access.arn
+}
 
 resource "aws_s3_bucket" "artifact_bucket" {
   bucket = "${var.project_name}-artifacts-${random_id.bucket_suffix.hex}"
