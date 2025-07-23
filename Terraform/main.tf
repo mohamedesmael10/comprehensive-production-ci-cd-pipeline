@@ -15,19 +15,23 @@ resource "aws_iam_policy" "codebuild_s3_access" {
     Version = "2012-10-17",
     Statement = [
       {
-        Effect   = "Allow",
-        Action   = [
+        Effect = "Allow",
+        Action = [
           "s3:PutObject",
           "s3:GetObject",
           "s3:GetObjectVersion",
           "s3:GetBucketAcl",
           "s3:GetBucketLocation"
         ],
-        Resource = "arn:aws:s3:::comp-prod-pipeline-artifacts-6f2ead0c/*"
+        Resource = [
+          "arn:aws:s3:::${var.project_name}-artifacts-*",
+          "arn:aws:s3:::${var.project_name}-artifacts-*/*"
+        ]
       }
     ]
   })
 }
+
 
 resource "aws_iam_role_policy_attachment" "codebuild_s3_access_attachment" {
   role       = aws_iam_role.codebuild_role.name
