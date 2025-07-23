@@ -7,8 +7,8 @@ env:
     AWS_ACCOUNT_ID: "025066251600"
     ECR_REPO_URI: "025066251600.dkr.ecr.us-east-1.amazonaws.com/comprehensive-production-ci-cd-pipeline-codepipeline"
   secrets-manager:
-    DOCKERHUB_PASS: "dockerhub:password"
-    SONAR_TOKEN: "sonarcloud:token"
+    DOCKERHUB_PASS: "comp-prod-pipeline-secret:dockerhub_pass"
+    SONAR_TOKEN: "comp-prod-pipeline-secret:sonar_token_param"
   exported-variables:
     - IMAGE_TAG
 
@@ -24,7 +24,7 @@ phases:
       - for i in $(seq 1 30); do docker info && break || sleep 1; done
       - echo "$DOCKERHUB_PASS" | docker login --username "$DOCKERHUB_USER" --password-stdin || (echo "⚠️ DockerHub login failed" && exit 1)
       - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
-      - curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.8.0.2856-linux.zip
+      - curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-7.1.0.4889-linux-x64.zip
       - unzip sonar-scanner.zip && mv sonar-scanner-*/ /opt/sonar-scanner && rm sonar-scanner.zip
       - export PATH="/opt/sonar-scanner/bin:$PATH"
 
@@ -33,7 +33,7 @@ phases:
       - echo "Logging in to Amazon ECR..."
       - aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$ECR_REPO_URI"
       - export IMAGE_TAG="$CODEBUILD_BUILD_NUMBER"
-      - echo "🖼IMAGE_TAG=$IMAGE_TAG"
+      - echo "IMAGE_TAG=$IMAGE_TAG"
       - trivy fs --exit-code 0 --severity HIGH,CRITICAL --skip-dirs target,.git .
 
   build:
@@ -48,7 +48,7 @@ phases:
     commands:
       - echo " Running SonarCloud analysis..."
       - sonar-scanner -Dsonar.projectKey=comprehensive-production-ci-cd-pipeline -Dsonar.organization=mohamedesmael10 -Dsonar.host.url=https://sonarcloud.io -Dsonar.java.binaries=target -Dsonar.java.libraries=target/dependency/*.jar -Dsonar.login="$SONAR_TOKEN"
-      - echo "⏳ Waiting for SonarCloud quality gate result..."
+      - echo "Waiting for SonarCloud quality gate result..."
       - sleep 10
       - |
         REPORT=$(curl -s -u "$SONAR_TOKEN": "https://sonarcloud.io/api/qualitygates/project_status?projectKey=comprehensive-production-ci-cd-pipeline")
