@@ -6,8 +6,12 @@ env:
     AWS_REGION: "us-east-1"
     AWS_ACCOUNT_ID: "025066251600"
     ECR_REPO_URI: "025066251600.dkr.ecr.us-east-1.amazonaws.com/comprehensive-production-ci-cd-pipeline-codepipeline"
+  secrets-manager:
+    DOCKERHUB_PASS: "dockerhub:password"
+    SONAR_TOKEN: "sonarcloud:token"
   exported-variables:
     - IMAGE_TAG
+
 
 phases:
   install:
