@@ -22,7 +22,7 @@ phases:
       - apt-get update && apt-get install -y git unzip curl docker.io jq
       - (service docker start || systemctl start docker || nohup dockerd > /dev/null 2>&1 &) && sleep 10
       - for i in $(seq 1 30); do docker info && break || sleep 1; done
-      - echo "$DOCKERHUB_PASS" | docker login --username "$DOCKERHUB_USER" --password-stdin || (echo "⚠️ DockerHub login failed" && exit 1)
+      - echo "$DOCKERHUB_PASS" | docker login --username "$DOCKERHUB_USER" --password-stdin || (echo "DockerHub login failed" && exit 1)
       - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
       - curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-7.1.0.4889-linux-x64.zip
       - unzip sonar-scanner.zip && mv sonar-scanner-*/ /opt/sonar-scanner && rm sonar-scanner.zip

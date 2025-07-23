@@ -48,3 +48,24 @@ variable "ecr_repo_uri" {
   type        = string
   description = "Docker Hub username"
 }
+
+variable "ecr_repo_name" {
+  description = "ECR repository name"
+  type        = string
+}
+
+variable "eks_cluster_name" {
+  description = "EKS cluster name"
+  type        = string
+}
+
+variable "eks_service_name" {
+  description = "Kubernetes deployment/service name"
+  type        = string
+}
+
+variable "eks_namespace" {
+  description = "Kubernetes namespace"
+  type        = string
+  default     = "default"
+}

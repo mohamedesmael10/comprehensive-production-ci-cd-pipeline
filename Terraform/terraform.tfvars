@@ -8,3 +8,8 @@ default_image_tag = "latest"
 codeconnection_arn = "arn:aws:codeconnections:us-east-1:025066251600:connection/ba2ef8c3-98a9-48f9-949c-e8353efeb72d"
 ecr_repo_uri =  "025066251600.dkr.ecr.us-east-1.amazonaws.com/comprehensive-production-ci-cd-pipeline-codepipeline"
 
+
+ecr_repo_name     = "comprehensive-production-ci-cd-pipeline-codepipeline"            
+eks_cluster_name  = "mohamed-esmael-cluster-v2"        
+eks_service_name  = "mohamed-esmael-service"         
+eks_namespace     = "mohamed-esmael-namespace"     
