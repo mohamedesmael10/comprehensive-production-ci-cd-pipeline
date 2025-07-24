@@ -15,20 +15,12 @@ phases:
   install:
     commands:
       - echo "Installing Ansible, Git, jq..."
-      - apt-get update
-      - apt-get install -y ansible git jq
+      - apt-get update && apt-get install -y ansible git jq
 
   pre_build:
     commands:
       - echo "Reading IMAGE_TAG from image_tag.txt..."
-      - |
-        if [ -f image_tag.txt ]; then
-          export IMAGE_TAG=$(cat image_tag.txt)
-          echo "Using IMAGE_TAG from file: $IMAGE_TAG"
-        else
-          export IMAGE_TAG="latest"
-          echo "image_tag.txt not found, using fallback: $IMAGE_TAG"
-        fi
+      - '[ -f image_tag.txt ] && export IMAGE_TAG=$(cat image_tag.txt) && echo "Using IMAGE_TAG: $IMAGE_TAG" || export IMAGE_TAG=latest && echo "Fallback IMAGE_TAG: $IMAGE_TAG"'
       - export ECR_REPO_URI="025066251600.dkr.ecr.us-east-1.amazonaws.com/comprehensive-production-ci-cd-pipeline-codepipeline"
       - echo "Using ECR image: $ECR_REPO_URI:$IMAGE_TAG"
       - aws --version
@@ -37,35 +29,14 @@ phases:
     commands:
       - ansible-playbook Ansible/deploy_monitoring.yaml --extra-vars "image_tag=$IMAGE_TAG"
       - aws ecs describe-task-definition --task-definition "$SERVICE_NAME" > task-def.json
-      - |
-        NEW_TASK_DEF=$(jq --arg IMAGE "$ECR_REPO_URI:$IMAGE_TAG" --arg CONTAINER_NAME "$CONTAINER_NAME" '
-          .taskDefinition | {
-            family,
-            containerDefinitions: (
-              .containerDefinitions | map(
-                if .name == $CONTAINER_NAME then .image = $IMAGE else . end
-              )
-            ),
-            requiresCompatibilities,
-            cpu,
-            memory,
-            networkMode,
-            executionRoleArn,
-            taskRoleArn,
-            volumes,
-            placementConstraints
-          }' task-def.json)
-        echo "$NEW_TASK_DEF" > new-task-def.json
-      - |
-        REVISION=$(aws ecs register-task-definition --cli-input-json file://new-task-def.json | jq -r '.taskDefinition.revision')
-        echo "New task definition revision: $REVISION"
+      - export NEW_TASK_DEF=$(jq --arg IMAGE "$ECR_REPO_URI:$IMAGE_TAG" --arg CONTAINER_NAME "$CONTAINER_NAME" '.taskDefinition | {family, containerDefinitions: (.containerDefinitions | map(if .name == $CONTAINER_NAME then .image = $IMAGE else . end)), requiresCompatibilities, cpu, memory, networkMode, executionRoleArn, taskRoleArn, volumes, placementConstraints}' task-def.json)
+      - echo "$NEW_TASK_DEF" > new-task-def.json
+      - export REVISION=$(aws ecs register-task-definition --cli-input-json file://new-task-def.json | jq -r '.taskDefinition.revision')
+      - echo "New task definition revision: $REVISION"
 
   post_build:
     commands:
-      - aws ecs update-service \
-          --cluster "$CLUSTER_NAME" \
-          --service "$SERVICE_NAME" \
-          --task-definition "${SERVICE_NAME}:$REVISION"
+      - aws ecs update-service --cluster "$CLUSTER_NAME" --service "$SERVICE_NAME" --task-definition "${SERVICE_NAME}:$REVISION"
 
 artifacts:
   files:
