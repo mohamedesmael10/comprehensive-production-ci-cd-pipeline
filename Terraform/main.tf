@@ -256,23 +256,24 @@ resource "aws_codepipeline" "app_pipeline" {
   }
 
   stage {
-    name = "Deploy"
+  name = "Deploy"
 
-    action {
-      name            = "CD_Deploy"
-      category        = "Build"
-      owner           = "AWS"
-      provider        = "CodeBuild"
-      version         = "1"
-      input_artifacts = ["build_output"]
+  action {
+    name            = "CD_Deploy"
+    category        = "Build"
+    owner           = "AWS"
+    provider        = "CodeBuild"
+    version         = "1"
+    input_artifacts = ["build_output"]
 
-     configuration = {
-       ProjectName = aws_codebuild_project.cd_deploy.name
-       EnvironmentVariables = jsonencode([
+    configuration = {
+      ProjectName = aws_codebuild_project.cd_deploy.name
+
+      EnvironmentVariables = jsonencode([
         {
           name  = "IMAGE_TAG"
           type  = "PLAINTEXT"
-          value = var.default_image_tag  
+          value = "CODEBUILD_RESOLVED_SOURCE_VERSION"
         },
         {
           name  = "APP_NAME"
@@ -296,9 +297,9 @@ resource "aws_codepipeline" "app_pipeline" {
         }
       ])
     }
-
-    }
   }
+}
+
 }
 
 # ─────────────────────────────── #
@@ -325,6 +326,25 @@ resource "aws_iam_role" "lambda_exec_role" {
     }]
   })
 }
+
+resource "aws_iam_role_policy" "codebuild_ecs_access" {
+  name = "AllowECSActions"
+  role = aws_iam_role.codebuild_role.name
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Effect = "Allow",
+      Action = [
+        "ecs:DescribeTaskDefinition",
+        "ecs:RegisterTaskDefinition",
+        "ecs:UpdateService"
+      ],
+      Resource = "*"
+    }]
+  })
+}
+
 
 resource "aws_iam_role_policy_attachment" "lambda_exec_policies" {
   for_each = toset([
