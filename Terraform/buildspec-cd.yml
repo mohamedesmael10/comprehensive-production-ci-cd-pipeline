@@ -33,6 +33,7 @@ phases:
       - echo "Using ECR image: $ECR_REPO_URI:$IMAGE_TAG"
       - aws --version
 
+
   build:
     commands:
       - ansible-playbook Ansible/deploy_monitoring.yaml --extra-vars "image_tag=$IMAGE_TAG"
