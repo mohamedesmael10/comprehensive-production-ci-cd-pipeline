@@ -33,7 +33,7 @@ phases:
       - echo "Logging in to Amazon ECR..."
       - aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$ECR_REPO_URI"
       - export IMAGE_TAG="$CODEBUILD_BUILD_NUMBER"
-      - echo "IMAGE_TAG=$IMAGE_TAG"
+      - echo "IMAGE_TAG=$IMAGE_TAG" >> image_tag.txt
       - trivy fs --exit-code 0 --severity HIGH,CRITICAL --skip-dirs target,.git .
 
   build:
@@ -69,3 +69,4 @@ artifacts:
   files:
     - target/*.jar
     - target/dependency/**/*
+    - image_tag.txt 

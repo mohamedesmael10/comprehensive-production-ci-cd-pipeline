@@ -187,6 +187,7 @@ resource "aws_codebuild_project" "cd_deploy" {
     compute_type = "BUILD_GENERAL1_MEDIUM"
     image        = "aws/codebuild/standard:7.0"
     type         = "LINUX_CONTAINER"
+    privileged_mode = true  
 
     environment_variable {
       name  = "IMAGE_TAG"
@@ -265,16 +266,37 @@ resource "aws_codepipeline" "app_pipeline" {
       version         = "1"
       input_artifacts = ["build_output"]
 
-      configuration = {
-        ProjectName = aws_codebuild_project.cd_deploy.name
-        EnvironmentVariables = jsonencode([
-          { name = "IMAGE_TAG", type = "CODEPIPELINE_VARIABLE", value = "IMAGE_TAG" },
-          { name = "APP_NAME", type = "PLAINTEXT", value = var.project_name },
-          { name = "DOCKERHUB_USER", type = "PLAINTEXT", value = var.dockerhub_user },
-          { name = "AWS_REGION", type = "PLAINTEXT", value = var.aws_region },
-          { name = "ECR_REPO_URI", type = "PLAINTEXT", value = var.ecr_repo_uri }
-        ])
-      }
+     configuration = {
+       ProjectName = aws_codebuild_project.cd_deploy.name
+       EnvironmentVariables = jsonencode([
+        {
+          name  = "IMAGE_TAG"
+          type  = "PLAINTEXT"
+          value = var.default_image_tag  
+        },
+        {
+          name  = "APP_NAME"
+          type  = "PLAINTEXT"
+          value = var.project_name
+        },
+        {
+          name  = "DOCKERHUB_USER"
+          type  = "PLAINTEXT"
+          value = var.dockerhub_user
+        },
+        {
+          name  = "AWS_REGION"
+          type  = "PLAINTEXT"
+          value = var.aws_region
+        },
+        {
+          name  = "ECR_REPO_URI"
+          type  = "PLAINTEXT"
+          value = var.ecr_repo_uri
+        }
+      ])
+    }
+
     }
   }
 }

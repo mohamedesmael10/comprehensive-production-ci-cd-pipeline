@@ -20,8 +20,15 @@ phases:
 
   pre_build:
     commands:
-      - if [ -z "$IMAGE_TAG" ]; then echo "ERROR: IMAGE_TAG is not set"; exit 1; fi
-      - export ECR_REPO_URI="025066251600.dkr.ecr.us-east-1.amazonaws.com/comprehensive-production-ci-cd-pipeline-codepipeline"
+      - echo "Reading IMAGE_TAG from image_tag.txt..."
+      - |
+        if [ -f image_tag.txt ]; then
+          export IMAGE_TAG=$(cat image_tag.txt)
+          echo "Using IMAGE_TAG from file: $IMAGE_TAG"
+        else
+          export IMAGE_TAG="latest"
+          echo "image_tag.txt not found, using fallback: $IMAGE_TAG"
+        fi      - export ECR_REPO_URI="025066251600.dkr.ecr.us-east-1.amazonaws.com/comprehensive-production-ci-cd-pipeline-codepipeline"
       - echo "Using ECR image: $ECR_REPO_URI:$IMAGE_TAG"
       - aws --version
 
@@ -58,3 +65,8 @@ phases:
           --cluster "$CLUSTER_NAME" \
           --service "$SERVICE_NAME" \
           --task-definition "${SERVICE_NAME}:$REVISION"
+
+
+artifacts:
+  files:
+    - image_tag.txt
