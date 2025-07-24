@@ -32,7 +32,6 @@ phases:
 
   build:
     commands:
-#     - ansible-playbook ../Ansible/deploy_monitoring.yaml --extra-vars "image_tag=$IMAGE_TAG"
       - aws ecs describe-task-definition --task-definition "$SERVICE_NAME" > task-def.json
       - |
         NEW_TASK_DEF=$(jq --arg IMAGE "$ECR_REPO_URI:$IMAGE_TAG" --arg CONTAINER_NAME "$CONTAINER_NAME" '
