@@ -19,7 +19,7 @@ phases:
 
   pre_build:
     commands:
-    - set -euo pipefail
+    - set -eu
     - |
       if [ -f image_tag.txt ]; then
         export IMAGE_TAG="$(cat image_tag.txt | tr -d '\r\n')"
