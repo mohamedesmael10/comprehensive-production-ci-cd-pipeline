@@ -28,7 +28,8 @@ phases:
         else
           export IMAGE_TAG="latest"
           echo "image_tag.txt not found, using fallback: $IMAGE_TAG"
-        fi      - export ECR_REPO_URI="025066251600.dkr.ecr.us-east-1.amazonaws.com/comprehensive-production-ci-cd-pipeline-codepipeline"
+        fi
+      - export ECR_REPO_URI="025066251600.dkr.ecr.us-east-1.amazonaws.com/comprehensive-production-ci-cd-pipeline-codepipeline"
       - echo "Using ECR image: $ECR_REPO_URI:$IMAGE_TAG"
       - aws --version
 
@@ -65,7 +66,6 @@ phases:
           --cluster "$CLUSTER_NAME" \
           --service "$SERVICE_NAME" \
           --task-definition "${SERVICE_NAME}:$REVISION"
-
 
 artifacts:
   files:
