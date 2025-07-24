@@ -27,8 +27,7 @@ phases:
           export IMAGE_TAG="latest"
           echo "image_tag.txt not found, using fallback: $IMAGE_TAG"
         fi
-      - export ECR_REPO_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${APP_NAME}"
-      - echo "Using ECR image: $ECR_REPO_URI:$IMAGE_TAG"
+      - export ECR_REPO_URI="025066251600.dkr.ecr.us-east-1.amazonaws.com/comprehensive-production-ci-cd-pipeline-codepipeline"
 
   build:
     commands:
