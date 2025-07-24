@@ -326,6 +326,32 @@ resource "aws_iam_role" "lambda_exec_role" {
     }]
   })
 }
+resource "aws_iam_role_policy" "codebuild_eks_access" {
+  name = "AllowEKSAccess"
+  role = aws_iam_role.codebuild_role.name
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "eks:DescribeCluster"
+        ],
+        Resource = "arn:aws:eks:us-east-1:025066251600:cluster/mohamed-esmael-cluster-v2"
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "eks:ListClusters",
+          "eks:AccessKubernetesApi",
+          "sts:AssumeRole"
+        ],
+        Resource = "*"
+      }
+    ]
+  })
+}
 
 resource "aws_iam_role_policy" "codebuild_ecs_access" {
   name = "AllowECSActions"
