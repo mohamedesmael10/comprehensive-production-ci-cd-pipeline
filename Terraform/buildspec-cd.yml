@@ -19,16 +19,17 @@ phases:
 
   pre_build:
     commands:
-    - set -eu
-    - |
-      if [ -f image_tag.txt ]; then
-        export IMAGE_TAG="$(cat image_tag.txt | tr -d '\r\n')"
-        echo "Using IMAGE_TAG from file: $IMAGE_TAG"
-      else
-        export IMAGE_TAG="latest"
-        echo "image_tag.txt not found, using fallback: $IMAGE_TAG"
-      fi
+      - set -eu
+      - |
+        if [ -f image_tag.txt ]; then
+          export IMAGE_TAG="$(cat image_tag.txt | tr -d '\r\n')"
+          echo "Using IMAGE_TAG from file: $IMAGE_TAG"
+        else
+          export IMAGE_TAG="latest"
+          echo "image_tag.txt not found, using fallback: $IMAGE_TAG"
+        fi
       - export ECR_REPO_URI="025066251600.dkr.ecr.us-east-1.amazonaws.com/comprehensive-production-ci-cd-pipeline-codepipeline"
+
 
   build:
     commands:
