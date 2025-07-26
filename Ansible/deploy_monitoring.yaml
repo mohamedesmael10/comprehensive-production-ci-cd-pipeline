@@ -11,6 +11,10 @@
 
   tasks:
 
+    - name: Configure kubeconfig to connect to EKS
+      shell: |
+        aws eks update-kubeconfig --region {{ region }} --name {{ cluster_name }}
+
     - name: Ensure Helm repos are added
       shell: |
         helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
