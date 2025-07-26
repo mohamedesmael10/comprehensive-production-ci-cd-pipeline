@@ -16,33 +16,34 @@ phases:
     runtime-versions:
       python: 3.11
     commands:
-      - echo "🔧 Installing dependencies..."
+      - echo " Installing dependencies..."
       - apt-get update && apt-get install -y curl unzip git jq ansible
       - echo " Installing kubectl..."
       - curl -LO "https://dl.k8s.io/release/$(curl -Ls https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
       - install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-      - echo " kubectl installed."
+      - echo "Installing kubectl complete."
+      - curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+      - chmod +x get_helm.sh
+      - ./get_helm.sh
+      - echo "Helm installed successfully."
 
   pre_build:
     commands:
-      - echo " Authenticating with EKS..."
+      - echo "Authenticating with EKS..."
       - aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER_NAME
       - |
         if [ -f image_tag.txt ]; then
           export IMAGE_TAG="$(cat image_tag.txt | tr -d '\r\n')"
-          echo " Using IMAGE_TAG from file: $IMAGE_TAG"
+          echo "Using IMAGE_TAG from file: $IMAGE_TAG"
         else
           export IMAGE_TAG="latest"
-          echo " image_tag.txt not found. Falling back to IMAGE_TAG=latest"
+          echo "image_tag.txt not found. Using fallback: $IMAGE_TAG"
         fi
       - export ECR_REPO_URI="025066251600.dkr.ecr.us-east-1.amazonaws.com/comprehensive-production-ci-cd-pipeline-codepipeline"
-      - echo " ECR_REPO_URI set to $ECR_REPO_URI"
-
   build:
     commands:
-      - echo " Running Ansible Playbook for EKS deployment..."
-      - ansible-playbook ../Ansible/deploy_monitoring.yaml --extra-vars "image_tag=${IMAGE_TAG} image_repo=${ECR_REPO_URI} namespace=${EKS_NAMESPACE} service_name=${EKS_SERVICE_NAME}" -vvvv
-      - ansible-playbook Ansible/deploy_monitoring.yaml --extra-vars "image_tag=${IMAGE_TAG} image_repo=${ECR_REPO_URI} namespace=${EKS_NAMESPACE} service_name=${EKS_SERVICE_NAME}" -vvvv
+      - echo "Running Ansible Playbook for EKS deployment..."
+      - ansible-playbook ../Ansible/deploy_monitoring.yaml --extra-vars "image_tag=$IMAGE_TAG image_repo=$ECR_REPO_URI namespace=$EKS_NAMESPACE service_name=$EKS_SERVICE_NAME"
 
 artifacts:
   files:
