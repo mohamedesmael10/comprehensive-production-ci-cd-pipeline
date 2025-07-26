@@ -6,7 +6,6 @@
     elastic_namespace: logging
 
   tasks:
-
     - name: Create monitoring namespace
       command: kubectl create namespace {{ monitoring_namespace }}
       ignore_errors: yes
@@ -34,9 +33,9 @@
 
     - name: Wait for Grafana service to get external IP
       shell: |
-        for i in {1..30}; do
+        for i in $(seq 1 30); do
           ip=$(kubectl get svc grafana -n {{ monitoring_namespace }} -o jsonpath="{.status.loadBalancer.ingress[0].hostname}")
-          if [[ ! -z "$ip" ]]; then echo "Grafana is up at $ip"; exit 0; fi
+          if [ ! -z "$ip" ]; then echo "Grafana is up at $ip"; exit 0; fi
           sleep 10
         done
         exit 1
@@ -65,9 +64,9 @@
 
     - name: Wait for Kibana service to get external IP
       shell: |
-        for i in {1..30}; do
+        for i in $(seq 1 30); do
           ip=$(kubectl get svc kibana-kibana -n {{ elastic_namespace }} -o jsonpath="{.status.loadBalancer.ingress[0].hostname}")
-          if [[ ! -z "$ip" ]]; then echo "Kibana is up at $ip"; exit 0; fi
+          if [ ! -z "$ip" ]; then echo "Kibana is up at $ip"; exit 0; fi
           sleep 10
         done
         exit 1
