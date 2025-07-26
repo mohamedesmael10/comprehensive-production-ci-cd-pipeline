@@ -16,17 +16,19 @@ phases:
     runtime-versions:
       python: 3.11
     commands:
-      - echo " Installing dependencies..."
+      - echo "Installing dependencies..."
       - apt-get update && apt-get install -y curl unzip git jq ansible
-      - echo " Installing kubectl..."
+      - echo "Installing kubectl..."
       - curl -LO "https://dl.k8s.io/release/$(curl -Ls https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
       - install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-      - echo "Installing kubectl complete."
+      - echo "kubectl installation complete."
 
   pre_build:
     commands:
-      - echo "Authenticating with EKS..."
+      - echo "Authenticating with EKS cluster..."
       - aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER_NAME
+
+      - echo "Checking for image tag..."
       - |
         if [ -f image_tag.txt ]; then
           export IMAGE_TAG="$(cat image_tag.txt | tr -d '\r\n')"
@@ -36,11 +38,34 @@ phases:
           echo "image_tag.txt not found. Using fallback: $IMAGE_TAG"
         fi
       - export ECR_REPO_URI="025066251600.dkr.ecr.us-east-1.amazonaws.com/comprehensive-production-ci-cd-pipeline-codepipeline"
+      
+
   build:
     commands:
-      - echo "Running Ansible Playbook for EKS deployment..."
- #     - ansible-playbook ../Ansible/deploy_monitoring.yaml --extra-vars "image_tag=$IMAGE_TAG image_repo=$ECR_REPO_URI namespace=$EKS_NAMESPACE service_name=$EKS_SERVICE_NAME"
+      - echo "Running Ansible Playbook for monitoring stack deployment..."
+      - ansible-playbook Ansible/deploy_monitoring.yaml --extra-vars "image_tag=$IMAGE_TAG image_repo=$ECR_REPO_URI namespace=$EKS_NAMESPACE service_name=$EKS_SERVICE_NAME"
+
+      - export PUSHGATEWAY_HOST=$(kubectl get svc pushgateway -n monitoring -o jsonpath="{.status.loadBalancer.ingress[0].hostname}")
+      - echo "Pushgateway host: $PUSHGATEWAY_HOST"
+      
+      - echo "Pushing custom metric to CloudWatch..."
+      - aws cloudwatch put-metric-data \
+          --namespace "CodePipelineMonitoring" \
+          --metric-name "BuildSuccess" \
+          --dimensions Pipeline=CodePipeline,Stage=Build \
+          --value 1
+
+      - echo "Logging deployment status for ELK ingestion..."
+      - echo "{\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\", \"status\":\"success\", \"image\":\"$IMAGE_TAG\"}" >> build_log.json
+
+      - echo "Pushing custom metrics to Prometheus Pushgateway..."
+      - |
+        echo "build_duration_seconds $(date +%s)" > metrics.txt
+        echo "build_status 1" >> metrics.txt
+        curl -X POST --data-binary @metrics.txt http://$PUSHGATEWAY_HOST:9091/metrics/job/codebuild_pipeline
 
 artifacts:
   files:
     - image_tag.txt
+    - build_log.json
+    - metrics.txt

@@ -1,53 +1,73 @@
----
-- name: Setup monitoring stack on local machine
+- name: Deploy Monitoring Stack on EKS
   hosts: localhost
   connection: local
-  become: true  
-  become_method: sudo
-  become_user: jenkins
-  gather_facts: true  
+  vars:
+    monitoring_namespace: monitoring
+    elastic_namespace: logging
 
   tasks:
-    - name: Ensure K3s and ArgoCD script is executable
-      file:
-        path: "../argocd/configs/setup_k3s_argocd.sh" 
-        mode: '0755'
-      become: true
 
-    - name: Ensure cAdvisor and Jenkins setup script is executable
-      file:
-        path: "../prometheus/setup_cadvisor_and_jenkins.sh"  
-        mode: '0755'
-      become: true
-
-    - name: Ensure Node Exporter setup script is executable
-      file:
-        path: "../prometheus/setup_node_exporter.sh"  
-        mode: '0755'
-      become: true
-
-    - name: Ensure Grafana setup script is executable
-      file:
-        path: "../prometheus/setup_grafana.sh"  
-        mode: '0755'
-      become: true
-
-    - name: Setup K3s and ArgoCD
-      script: "../argocd/configs/setup_k3s_argocd.sh"
-      become: true
+    - name: Create monitoring namespace
+      command: kubectl create namespace {{ monitoring_namespace }}
       ignore_errors: yes
 
-    - name: Setup cAdvisor and Jenkins
-      script: "../prometheus/setup_cadvisor_and_jenkins.sh"  
-      become: true
-      ignore_errors: yes  
+    - name: Add Prometheus Helm repo
+      command: helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 
-    - name: Setup Node Exporter
-      script: "../prometheus/setup_node_exporter.sh"  
-      become: true
+    - name: Add Grafana Helm repo
+      command: helm repo add grafana https://grafana.github.io/helm-charts
+
+    - name: Update Helm repos
+      command: helm repo update
+
+    - name: Install Prometheus
+      command: >
+        helm upgrade --install prometheus prometheus-community/prometheus
+        --namespace {{ monitoring_namespace }}
+
+    - name: Install Grafana
+      command: >
+        helm upgrade --install grafana grafana/grafana
+        --namespace {{ monitoring_namespace }}
+        --set adminPassword='admin'
+        --set service.type=LoadBalancer
+
+    - name: Wait for Grafana service to get external IP
+      shell: |
+        for i in {1..30}; do
+          ip=$(kubectl get svc grafana -n {{ monitoring_namespace }} -o jsonpath="{.status.loadBalancer.ingress[0].hostname}")
+          if [[ ! -z "$ip" ]]; then echo "Grafana is up at $ip"; exit 0; fi
+          sleep 10
+        done
+        exit 1
+
+    - name: Create logging namespace
+      command: kubectl create namespace {{ elastic_namespace }}
       ignore_errors: yes
 
-    - name: Setup Grafana
-      script: "../prometheus/setup_grafana.sh"  
-      become: true
-      ignore_errors: yes
+    - name: Add Elastic Helm repo
+      command: helm repo add elastic https://helm.elastic.co
+
+    - name: Update Helm repos (again)
+      command: helm repo update
+
+    - name: Install Elasticsearch
+      command: >
+        helm upgrade --install elasticsearch elastic/elasticsearch
+        --namespace {{ elastic_namespace }}
+        --set service.type=LoadBalancer
+
+    - name: Install Kibana
+      command: >
+        helm upgrade --install kibana elastic/kibana
+        --namespace {{ elastic_namespace }}
+        --set service.type=LoadBalancer
+
+    - name: Wait for Kibana service to get external IP
+      shell: |
+        for i in {1..30}; do
+          ip=$(kubectl get svc kibana-kibana -n {{ elastic_namespace }} -o jsonpath="{.status.loadBalancer.ingress[0].hostname}")
+          if [[ ! -z "$ip" ]]; then echo "Kibana is up at $ip"; exit 0; fi
+          sleep 10
+        done
+        exit 1
