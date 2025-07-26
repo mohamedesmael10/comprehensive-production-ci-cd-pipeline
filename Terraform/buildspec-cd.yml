@@ -42,7 +42,7 @@ phases:
     commands:
       - echo " Running Ansible Playbook for EKS deployment..."
       - ansible-playbook Ansible/deploy_monitoring.yaml \
-          --extra-vars "image_tag=${IMAGE_TAG} image_repo=${ECR_REPO_URI} namespace=${EKS_NAMESPACE} service_name=${EKS_SERVICE_NAME}"
+          --extra-vars "image_tag=${IMAGE_TAG} image_repo=${ECR_REPO_URI} namespace=${EKS_NAMESPACE} service_name=${EKS_SERVICE_NAME}" -vvvv
 
 artifacts:
   files:
