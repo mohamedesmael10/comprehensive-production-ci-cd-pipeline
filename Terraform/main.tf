@@ -55,38 +55,6 @@ data "aws_iam_policy_document" "codebuild_assume" {
   }
 }
 
-data "aws_eks_cluster" "cluster" {
-  name = eks_cluster_name
-}
-
-data "aws_eks_cluster_auth" "cluster" {
-  name = eks_cluster_name
-}
-
-provider "kubernetes" {
-  host                   = data.aws_eks_cluster.cluster.endpoint
-  cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority[0].data)
-  token                  = data.aws_eks_cluster_auth.cluster.token
-}
-
-resource "kubernetes_config_map" "aws_auth" {
-  metadata {
-    name      = "aws-auth"
-    namespace = "kube-system"
-  }
-
-  data = {
-    mapRoles = yamlencode([
-      {
-        rolearn  = "arn:aws:iam::025066251600:role/comp-prod-pipeline-codebuild-role"
-        username = "codebuild"
-        groups   = ["system:masters"]
-      }
-    ])
-  }
-}
-
-
 resource "aws_iam_role" "codebuild_role" {
   name               = "${var.project_name}-codebuild-role"
   assume_role_policy = data.aws_iam_policy_document.codebuild_assume.json
@@ -114,6 +82,47 @@ resource "aws_iam_role_policy" "codebuild_secrets_access" {
       Resource = "arn:aws:secretsmanager:us-east-1:025066251600:secret:comp-prod-pipeline-secret*"
     }]
   })
+}
+
+# ─────────────────────────────── #
+# EKS Cluster Data & aws-auth Mapping
+# ─────────────────────────────── #
+
+data "aws_eks_cluster" "cluster" {
+  name = var.eks_cluster_name
+}
+
+data "aws_eks_cluster_auth" "cluster" {
+  name = var.eks_cluster_name
+}
+
+provider "kubernetes" {
+  host                   = data.aws_eks_cluster.cluster.endpoint
+  cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority[0].data)
+  token                  = data.aws_eks_cluster_auth.cluster.token
+}
+
+locals {
+  map_roles = [
+    {
+      rolearn  = "arn:aws:iam::025066251600:role/comp-prod-pipeline-codebuild-role"
+      username = "codebuild"
+      groups   = ["system:masters"]
+    }
+  ]
+}
+
+resource "kubernetes_config_map" "aws_auth" {
+  metadata {
+    name      = "aws-auth"
+    namespace = "kube-system"
+  }
+
+  data = {
+    mapRoles = yamlencode(local.map_roles)
+  }
+
+  depends_on = [data.aws_eks_cluster.cluster]
 }
 
 # ─────────────────────────────── #
@@ -216,10 +225,10 @@ resource "aws_codebuild_project" "cd_deploy" {
   }
 
   environment {
-    compute_type = "BUILD_GENERAL1_MEDIUM"
-    image        = "aws/codebuild/standard:7.0"
-    type         = "LINUX_CONTAINER"
-    privileged_mode = true  
+    compute_type    = "BUILD_GENERAL1_MEDIUM"
+    image           = "aws/codebuild/standard:7.0"
+    type            = "LINUX_CONTAINER"
+    privileged_mode = true
 
     environment_variable {
       name  = "IMAGE_TAG"
@@ -237,7 +246,7 @@ resource "aws_codebuild_project" "cd_deploy" {
 }
 
 # ─────────────────────────────── #
-# CodePipeline
+# CodePipeline Definition
 # ─────────────────────────────── #
 
 resource "aws_codepipeline" "app_pipeline" {
@@ -288,50 +297,49 @@ resource "aws_codepipeline" "app_pipeline" {
   }
 
   stage {
-  name = "Deploy"
+    name = "Deploy"
 
-  action {
-    name            = "CD_Deploy"
-    category        = "Build"
-    owner           = "AWS"
-    provider        = "CodeBuild"
-    version         = "1"
-    input_artifacts = ["build_output"]
+    action {
+      name            = "CD_Deploy"
+      category        = "Build"
+      owner           = "AWS"
+      provider        = "CodeBuild"
+      version         = "1"
+      input_artifacts = ["build_output"]
 
-    configuration = {
-      ProjectName = aws_codebuild_project.cd_deploy.name
+      configuration = {
+        ProjectName = aws_codebuild_project.cd_deploy.name
 
-      EnvironmentVariables = jsonencode([
-        {
-          name  = "IMAGE_TAG"
-          type  = "PLAINTEXT"
-          value = "CODEBUILD_RESOLVED_SOURCE_VERSION"
-        },
-        {
-          name  = "APP_NAME"
-          type  = "PLAINTEXT"
-          value = var.project_name
-        },
-        {
-          name  = "DOCKERHUB_USER"
-          type  = "PLAINTEXT"
-          value = var.dockerhub_user
-        },
-        {
-          name  = "AWS_REGION"
-          type  = "PLAINTEXT"
-          value = var.aws_region
-        },
-        {
-          name  = "ECR_REPO_URI"
-          type  = "PLAINTEXT"
-          value = var.ecr_repo_uri
-        }
-      ])
+        EnvironmentVariables = jsonencode([
+          {
+            name  = "IMAGE_TAG"
+            type  = "PLAINTEXT"
+            value = "CODEBUILD_RESOLVED_SOURCE_VERSION"
+          },
+          {
+            name  = "APP_NAME"
+            type  = "PLAINTEXT"
+            value = var.project_name
+          },
+          {
+            name  = "DOCKERHUB_USER"
+            type  = "PLAINTEXT"
+            value = var.dockerhub_user
+          },
+          {
+            name  = "AWS_REGION"
+            type  = "PLAINTEXT"
+            value = var.aws_region
+          },
+          {
+            name  = "ECR_REPO_URI"
+            type  = "PLAINTEXT"
+            value = var.ecr_repo_uri
+          }
+        ])
+      }
     }
   }
-}
-
 }
 
 # ─────────────────────────────── #
@@ -342,22 +350,19 @@ data "aws_lambda_function" "update_eks_service" {
   function_name = "ECSImageUpdateLambda"
 }
 
-
 resource "aws_iam_role" "lambda_exec_role" {
-  name = "${var.project_name}-lambda-exec-role"
-
+  name               = "${var.project_name}-lambda-exec-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
-      Action = "sts:AssumeRole",
-      Principal = {
-        Service = "lambda.amazonaws.com"
-      },
-      Effect = "Allow",
-      Sid    = ""
+      Action    = "sts:AssumeRole",
+      Principal = { Service = "lambda.amazonaws.com" },
+      Effect    = "Allow",
+      Sid       = ""
     }]
   })
 }
+
 resource "aws_iam_role_policy" "codebuild_eks_access" {
   name = "AllowEKSAccess"
   role = aws_iam_role.codebuild_role.name
@@ -366,19 +371,13 @@ resource "aws_iam_role_policy" "codebuild_eks_access" {
     Version = "2012-10-17",
     Statement = [
       {
-        Effect = "Allow",
-        Action = [
-          "eks:DescribeCluster"
-        ],
-        Resource = "arn:aws:eks:us-east-1:025066251600:cluster/mohamed-esmael-cluster-v2"
+        Effect   = "Allow",
+        Action   = ["eks:DescribeCluster"],
+        Resource = "arn:aws:eks:us-east-1:025066251600:cluster/${var.eks_cluster_name}"
       },
       {
-        Effect = "Allow",
-        Action = [
-          "eks:ListClusters",
-          "eks:AccessKubernetesApi",
-          "sts:AssumeRole"
-        ],
+        Effect   = "Allow",
+        Action   = ["eks:ListClusters", "eks:AccessKubernetesApi", "sts:AssumeRole"],
         Resource = "*"
       }
     ]
@@ -392,17 +391,12 @@ resource "aws_iam_role_policy" "codebuild_ecs_access" {
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
-      Effect = "Allow",
-      Action = [
-        "ecs:DescribeTaskDefinition",
-        "ecs:RegisterTaskDefinition",
-        "ecs:UpdateService"
-      ],
+      Effect   = "Allow",
+      Action   = ["ecs:DescribeTaskDefinition","ecs:RegisterTaskDefinition","ecs:UpdateService"],
       Resource = "*"
     }]
   })
 }
-
 
 resource "aws_iam_role_policy_attachment" "lambda_exec_policies" {
   for_each = toset([
@@ -424,7 +418,7 @@ resource "aws_cloudwatch_event_rule" "ecr_image_push" {
   event_pattern = jsonencode({
     source      = ["aws.ecr"],
     "detail-type" = ["ECR Image Action"],
-    detail      = {
+    detail = {
       "action-type"     = ["PUSH"],
       "repository-name" = [var.ecr_repo_name]
     }

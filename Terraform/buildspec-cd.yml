@@ -21,34 +21,18 @@ phases:
       - echo " Installing kubectl..."
       - curl -LO "https://dl.k8s.io/release/$(curl -Ls https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
       - install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-      - echo "Installing Helm..."
+      - echo "Installing kubectl complete."
       - curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
-      - chmod +x get_helm.sh && ./get_helm.sh
+      - chmod +x get_helm.sh
+      - ./get_helm.sh
       - echo "Helm installed successfully."
 
   pre_build:
     commands:
       - echo "Authenticating with EKS..."
-      - aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER_NAME
-
-      - echo "Ensuring CodeBuild IAM Role is mapped in aws-auth ConfigMap..."
-      - |
-        ROLE_ARN="arn:aws:iam::025066251600:role/comp-prod-pipeline-codebuild-role"
-        CURRENT_MAPROLES=$(kubectl get configmap aws-auth -n kube-system -o jsonpath='{.data.mapRoles}')
-        if ! echo "$CURRENT_MAPROLES" | grep -q "$ROLE_ARN"; then
-          echo "Patching aws-auth ConfigMap..."
-          NEW_ROLES=$(echo -e "$CURRENT_MAPROLES\n- rolearn: $ROLE_ARN\n  username: codebuild\n  groups:\n    - system:masters")
-          kubectl patch configmap aws-auth -n kube-system --type merge -p "{\"data\":{\"mapRoles\":\"$NEW_ROLES\"}}"
-        else
-          echo "IAM Role already mapped to aws-auth."
-        fi
-
-      - echo "Validating Kubernetes access..."
-      - kubectl get nodes || (echo "Failed to connect to Kubernetes cluster"; exit 1)
-      - helm version || (echo "Helm not working"; exit 1)
-      - kubectl config current-context
-      - echo "Kubernetes and Helm setup completed."
-
+     # - aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER_NAME
+      - aws eks update-kubeconfig --region us-east-1 --name mohamed-esmael-cluster-v2
+      
       - |
         if [ -f image_tag.txt ]; then
           export IMAGE_TAG="$(cat image_tag.txt | tr -d '\r\n')"
@@ -58,12 +42,11 @@ phases:
           echo "image_tag.txt not found. Using fallback: $IMAGE_TAG"
         fi
       - export ECR_REPO_URI="025066251600.dkr.ecr.us-east-1.amazonaws.com/comprehensive-production-ci-cd-pipeline-codepipeline"
-
   build:
     commands:
       - echo "Running Ansible Playbook for EKS deployment..."
       - wget https://raw.githubusercontent.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/codepipeline/Ansible/deploy_monitoring.yaml
-      - ansible-playbook deploy_monitoring.yaml -vvv --extra-vars "image_tag=$IMAGE_TAG image_repo=$ECR_REPO_URI namespace=$EKS_NAMESPACE service_name=$EKS_SERVICE_NAME"
+      - ansible-playbook deploy_monitoring.yaml --extra-vars "image_tag=$IMAGE_TAG image_repo=$ECR_REPO_URI namespace=$EKS_NAMESPACE service_name=$EKS_SERVICE_NAME"
 
 artifacts:
   files:
