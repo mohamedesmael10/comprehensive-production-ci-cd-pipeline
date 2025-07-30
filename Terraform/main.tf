@@ -55,6 +55,38 @@ data "aws_iam_policy_document" "codebuild_assume" {
   }
 }
 
+data "aws_eks_cluster" "cluster" {
+  name = eks_cluster_name
+}
+
+data "aws_eks_cluster_auth" "cluster" {
+  name = eks_cluster_name
+}
+
+provider "kubernetes" {
+  host                   = data.aws_eks_cluster.cluster.endpoint
+  cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority[0].data)
+  token                  = data.aws_eks_cluster_auth.cluster.token
+}
+
+resource "kubernetes_config_map" "aws_auth" {
+  metadata {
+    name      = "aws-auth"
+    namespace = "kube-system"
+  }
+
+  data = {
+    mapRoles = yamlencode([
+      {
+        rolearn  = "arn:aws:iam::025066251600:role/comp-prod-pipeline-codebuild-role"
+        username = "codebuild"
+        groups   = ["system:masters"]
+      }
+    ])
+  }
+}
+
+
 resource "aws_iam_role" "codebuild_role" {
   name               = "${var.project_name}-codebuild-role"
   assume_role_policy = data.aws_iam_policy_document.codebuild_assume.json
