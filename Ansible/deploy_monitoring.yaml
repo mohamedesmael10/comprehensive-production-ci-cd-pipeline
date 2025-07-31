@@ -85,6 +85,10 @@
             limits:
               cpu: 500m
               memory: 1Gi
+          security:
+            enabled: true
+            elasticPassword: "Admin123!"
+
 
     - name: Install Elasticsearch via Helm
       kubernetes.core.helm:
@@ -96,6 +100,25 @@
         timeout: "900s"
         values_files:
           - /tmp/elasticsearch-values.yaml
+          
+    - name: Create LoadBalancer Service for Elasticsearch
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: elasticsearch-lb
+            namespace: "{{ namespace }}"
+          spec:
+            type: LoadBalancer
+            ports:
+              - name: https
+                port: 9200
+                targetPort: 9200
+            selector:
+              app.kubernetes.io/app: elasticsearch-master
+              app: elasticsearch-master
 
     - name: Install Kibana via Helm
       kubernetes.core.helm:
@@ -107,6 +130,8 @@
         timeout: "600s"
         values:
           elasticsearchHosts: "http://elasticsearch-master:9200"
+          elasticsearchUsername: "elastic"
+          elasticsearchPassword: "Admin123!"
 
 
     - name: Associate IAM OIDC provider with EKS
