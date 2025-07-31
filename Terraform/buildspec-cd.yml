@@ -16,23 +16,25 @@ phases:
     runtime-versions:
       python: 3.11
     commands:
-      - echo " Installing dependencies..."
-      - apt-get update && apt-get install -y curl unzip git jq ansible
-      - echo " Installing kubectl..."
+      - echo "Installing dependencies..."
+      - apt-get update && apt-get install -y curl unzip git jq python3-pip
+      - pip3 install --upgrade pip
+      - pip3 install ansible boto3 botocore kubernetes
+      - ansible-galaxy collection install kubernetes.core community.kubernetes
+      - echo "Installing kubectl..."
       - curl -LO "https://dl.k8s.io/release/$(curl -Ls https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
       - install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-      - echo "Installing kubectl complete."
+      - echo "Installing Helm..."
       - curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
       - chmod +x get_helm.sh
       - ./get_helm.sh
-      - echo "Helm installed successfully."
+      - helm version
+      - ansible-galaxy collection list
 
   pre_build:
     commands:
       - echo "Authenticating with EKS..."
-     # - aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER_NAME
-      - aws eks update-kubeconfig --region us-east-1 --name mohamed-esmael-cluster-v2
-      
+      - aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER_NAME
       - |
         if [ -f image_tag.txt ]; then
           export IMAGE_TAG="$(cat image_tag.txt | tr -d '\r\n')"
@@ -41,7 +43,8 @@ phases:
           export IMAGE_TAG="latest"
           echo "image_tag.txt not found. Using fallback: $IMAGE_TAG"
         fi
-      - export ECR_REPO_URI="025066251600.dkr.ecr.us-east-1.amazonaws.com/comprehensive-production-ci-cd-pipeline-codepipeline"
+      - export ECR_REPO_URI="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_NAME"
+
   build:
     commands:
       - echo "Running Ansible Playbook for EKS deployment..."
