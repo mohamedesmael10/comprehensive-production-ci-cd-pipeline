@@ -12,17 +12,23 @@
 
   tasks:
     - name: Configure kubeconfig to connect to EKS
-      ansible.builtin.shell: |
+      ansible.builtin.shell: >
         aws eks update-kubeconfig --region {{ region }} --name {{ cluster_name }}
+      changed_when: false
 
-    - name: Ensure Helm repos are added
+    - name: Add Helm repositories
       ansible.builtin.shell: |
         helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
         helm repo add grafana https://grafana.github.io/helm-charts
         helm repo add elastic https://helm.elastic.co
         helm repo add eks https://aws.github.io/eks-charts
         helm repo update
-        python3 -m pip install --user kubernetes
+      changed_when: false
+
+    - name: Install Kubernetes Python client
+      ansible.builtin.pip:
+        name: kubernetes
+        extra_args: --user
 
     - name: Install Prometheus via Helm
       kubernetes.core.helm:
@@ -32,6 +38,17 @@
         create_namespace: true
         wait: true
         timeout: "600s"
+        values:
+          alertmanager:
+            persistence:
+              enabled: true
+              storageClass: gp3
+              size: 2Gi
+          server:
+            persistentVolume:
+              enabled: true
+              storageClass: gp3
+              size: 8Gi
 
     - name: Install Grafana via Helm
       kubernetes.core.helm:
@@ -42,10 +59,14 @@
         wait: true
         timeout: "600s"
         values:
-          adminPassword: "Admin123" 
+          adminPassword: "Admin123"
+          persistence:
+            enabled: true
+            storageClassName: gp3
+            size: 5Gi
 
-    - name: Create custom values for Elasticsearch
-      copy:
+    - name: Create Elasticsearch values file
+      ansible.builtin.copy:
         dest: /tmp/elasticsearch-values.yaml
         content: |
           replicas: 3
@@ -83,9 +104,12 @@
         release_namespace: "{{ namespace }}"
         create_namespace: false
         wait: true
-        timeout: "10m"
+        timeout: "600s"
+        values:
+          elasticsearchHosts: "http://elasticsearch-master:9200"
 
-    - name: Associate IAM OIDC provider with EKS (required for CloudWatch agent)
+
+    - name: Associate IAM OIDC provider with EKS
       ansible.builtin.shell: |
         eksctl utils associate-iam-oidc-provider \
           --region {{ region }} \
@@ -110,6 +134,10 @@
         wait: true
         timeout: "600s"
         values:
-          enableContainerInsights: true
-          region: "{{ region }}"
+          cloudWatch:
+            region: "{{ region }}"
+            logGroupName: "/aws/eks/{{ cluster_name }}/application"
+            logRetentionDays: 30
           clusterName: "{{ cluster_name }}"
+          serviceAccount:
+            create: true

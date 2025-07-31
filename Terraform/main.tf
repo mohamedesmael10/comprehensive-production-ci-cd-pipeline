@@ -163,6 +163,90 @@ resource "aws_iam_policy" "codebuild_eks_oidc_policy" {
   })
 }
 
+resource "aws_iam_role_policy" "codepipeline_inline" {
+  name = "CodePipelineFullAccessPolicy"
+  role = aws_iam_role.codepipeline_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      # Allow access to the S3 artifact bucket
+      {
+        Effect = "Allow",
+        Action = [
+          "s3:GetObject",
+          "s3:GetObjectVersion",
+          "s3:PutObject",
+          "s3:PutObjectAcl",
+          "s3:DeleteObject"
+        ],
+        Resource = [
+          "${aws_s3_bucket.artifact_bucket.arn}",
+          "${aws_s3_bucket.artifact_bucket.arn}/*"
+        ]
+      },
+      # Allow triggering CodeBuild projects
+      {
+        Effect = "Allow",
+        Action = [
+          "codebuild:StartBuild",
+          "codebuild:BatchGetBuilds",
+          "codebuild:BatchGetProjects"
+        ],
+        Resource = [
+          aws_codebuild_project.ci_build.arn,
+          aws_codebuild_project.cd_deploy.arn
+        ]
+      },
+      # Allow CodePipeline to use CodeStar Connection for GitHub
+      {
+        Effect = "Allow",
+        Action = "codestar-connections:UseConnection",
+        Resource = var.codeconnection_arn
+      },
+      # Optional: Allow updating EKS resources via CodePipeline
+      {
+        Effect = "Allow",
+        Action = [
+          "eks:DescribeCluster",
+          "eks:ListClusters",
+          "eks:ListNodegroups",
+          "eks:DescribeNodegroup",
+          "eks:ListAddons"
+        ],
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_policy" "codebuild_oidc_access" {
+  name   = "CodeBuildEKSOIDCPolicy"
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "eks:DescribeCluster",
+          "eks:DescribeClusterVersions",
+          "eks:ListClusters",
+          "iam:GetOpenIDConnectProvider",
+          "iam:CreateOpenIDConnectProvider",
+          "iam:AddClientIDToOpenIDConnectProvider",
+          "iam:TagOpenIDConnectProvider"
+        ],
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "attach_codebuild_oidc_access" {
+  role       = aws_iam_role.codebuild_role.name
+  policy_arn = aws_iam_policy.codebuild_oidc_access.arn
+}
+
 resource "aws_iam_role_policy_attachment" "attach_custom_ebs_csi_policy" {
   role       = data.aws_iam_role.worker_node_role.name
   policy_arn = aws_iam_policy.ebs_csi_driver_custom.arn
@@ -202,7 +286,7 @@ resource "null_resource" "patch_aws_auth" {
 }
 
 # ─────────────────────────────── #
-# CodePipeline & CodeBuild Projects
+# CodePipeline & CodeBuild Projects #
 # ─────────────────────────────── #
 
 data "aws_iam_policy_document" "codepipeline_assume" {
@@ -239,14 +323,9 @@ resource "aws_iam_role_policy" "codepipeline_connection" {
 
   policy = jsonencode({
     Version   = "2012-10-17",
-    Statement = [{
-      Effect   = "Allow",
-      Action   = "codestar-connections:UseConnection",
-      Resource = var.codeconnection_arn
-    }]
+    Statement = [{ Effect = "Allow", Action = "codestar-connections:UseConnection", Resource = var.codeconnection_arn }]
   })
 }
-
 # ─────────────────────────────── #
 # CodeBuild Projects
 # ─────────────────────────────── #
@@ -301,10 +380,10 @@ resource "aws_codebuild_project" "cd_deploy" {
   }
 
   environment {
-    compute_type    = "BUILD_GENERAL1_MEDIUM"
-    image           = "aws/codebuild/standard:7.0"
-    type            = "LINUX_CONTAINER"
-    privileged_mode = true
+    compute_type = "BUILD_GENERAL1_MEDIUM"
+    image        = "aws/codebuild/standard:7.0"
+    type         = "LINUX_CONTAINER"
+    privileged_mode = true  
 
     environment_variable {
       name  = "IMAGE_TAG"
@@ -347,17 +426,18 @@ resource "aws_codepipeline" "app_pipeline" {
 
       configuration = {
         ConnectionArn    = var.codeconnection_arn
-        FullRepositoryId = var.github_repo
+        FullRepositoryId = "${var.github_owner}/${var.github_repo}"
         BranchName       = var.github_branch
+        DetectChanges    = "true"
       }
     }
   }
 
   stage {
-    name = "Build"
+    name = "BuildAndDockerize"
 
     action {
-      name             = "CI_Build"
+      name             = "CI_Docker_Build"
       category         = "Build"
       owner            = "AWS"
       provider         = "CodeBuild"
@@ -372,19 +452,159 @@ resource "aws_codepipeline" "app_pipeline" {
   }
 
   stage {
-    name = "Deploy"
+  name = "Deploy"
 
-    action {
-      name            = "CD_Deploy"
-      category        = "Build"
-      owner           = "AWS"
-      provider        = "CodeBuild"
-      version         = "1"
-      input_artifacts = ["build_output"]
+  action {
+    name            = "CD_Deploy"
+    category        = "Build"
+    owner           = "AWS"
+    provider        = "CodeBuild"
+    version         = "1"
+    input_artifacts = ["build_output"]
 
-      configuration = {
-        ProjectName = aws_codebuild_project.cd_deploy.name
-      }
+    configuration = {
+      ProjectName = aws_codebuild_project.cd_deploy.name
+
+      EnvironmentVariables = jsonencode([
+        {
+          name  = "IMAGE_TAG"
+          type  = "PLAINTEXT"
+          value = "CODEBUILD_RESOLVED_SOURCE_VERSION"
+        },
+        {
+          name  = "APP_NAME"
+          type  = "PLAINTEXT"
+          value = var.project_name
+        },
+        {
+          name  = "DOCKERHUB_USER"
+          type  = "PLAINTEXT"
+          value = var.dockerhub_user
+        },
+        {
+          name  = "AWS_REGION"
+          type  = "PLAINTEXT"
+          value = var.aws_region
+        },
+        {
+          name  = "ECR_REPO_URI"
+          type  = "PLAINTEXT"
+          value = var.ecr_repo_uri
+        }
+      ])
     }
   }
+}
+
+}
+
+# ─────────────────────────────── #
+# Lambda for EKS Service Update
+# ─────────────────────────────── #
+
+data "aws_lambda_function" "update_eks_service" {
+  function_name = "ECSImageUpdateLambda"
+}
+
+
+resource "aws_iam_role" "lambda_exec_role" {
+  name = "${var.project_name}-lambda-exec-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Action = "sts:AssumeRole",
+      Principal = {
+        Service = "lambda.amazonaws.com"
+      },
+      Effect = "Allow",
+      Sid    = ""
+    }]
+  })
+}
+resource "aws_iam_role_policy" "codebuild_eks_access" {
+  name = "AllowEKSAccess"
+  role = aws_iam_role.codebuild_role.name
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "eks:DescribeCluster"
+        ],
+        Resource = "arn:aws:eks:us-east-1:025066251600:cluster/mohamed-esmael-cluster-v2"
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "eks:ListClusters",
+          "eks:AccessKubernetesApi",
+          "sts:AssumeRole"
+        ],
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "codebuild_ecs_access" {
+  name = "AllowECSActions"
+  role = aws_iam_role.codebuild_role.name
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Effect = "Allow",
+      Action = [
+        "ecs:DescribeTaskDefinition",
+        "ecs:RegisterTaskDefinition",
+        "ecs:UpdateService"
+      ],
+      Resource = "*"
+    }]
+  })
+}
+
+
+resource "aws_iam_role_policy_attachment" "lambda_exec_policies" {
+  for_each = toset([
+    "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+    "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy",
+    "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
+  ])
+  role       = aws_iam_role.lambda_exec_role.name
+  policy_arn = each.value
+}
+
+# ─────────────────────────────── #
+# EventBridge Rule (Trigger Lambda on ECR Push)
+# ─────────────────────────────── #
+
+resource "aws_cloudwatch_event_rule" "ecr_image_push" {
+  name        = "${var.project_name}-ecr-push-rule"
+  description = "Trigger Lambda on new image push to ECR"
+  event_pattern = jsonencode({
+    source      = ["aws.ecr"],
+    "detail-type" = ["ECR Image Action"],
+    detail      = {
+      "action-type"     = ["PUSH"],
+      "repository-name" = [var.ecr_repo_name]
+    }
+  })
+}
+
+resource "aws_cloudwatch_event_target" "ecr_to_lambda" {
+  rule      = aws_cloudwatch_event_rule.ecr_image_push.name
+  target_id = "TriggerLambdaFunction"
+  arn       = data.aws_lambda_function.update_eks_service.arn
+}
+
+resource "aws_lambda_permission" "allow_eventbridge" {
+  statement_id  = "AllowExecutionFromEventBridge"
+  action        = "lambda:InvokeFunction"
+  function_name = data.aws_lambda_function.update_eks_service.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.ecr_image_push.arn
 }
