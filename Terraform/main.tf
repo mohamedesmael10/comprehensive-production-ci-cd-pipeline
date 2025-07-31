@@ -112,26 +112,41 @@ data "aws_iam_role" "worker_node_role" {
   name = var.worker_node_iam_role_name
 }
 
-resource "aws_iam_policy" "ebs_csi_driver_custom" {
-  name        = "CustomAmazonEBSCSIDriverPolicy"
-  description = "Minimum permissions for EBS CSI driver"
+resource "aws_iam_policy" "codebuild_eks_oidc_policy" {
+  name        = "codebuild-eks-oidc-policy"
+  description = "Allow CodeBuild to associate EKS OIDC provider and describe clusters"
 
   policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [{
-      Effect = "Allow",
-      Action = [
-        "ec2:AttachVolume",
-        "ec2:CreateVolume",
-        "ec2:DeleteVolume",
-        "ec2:DetachVolume",
-        "ec2:DescribeInstances",
-        "ec2:DescribeVolumes",
-        "ec2:DescribeAvailabilityZones"
-      ],
-      Resource = "*"
-    }]
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "eks:DescribeCluster",
+          "eks:DescribeClusterVersions",
+          "eks:ListClusters",
+          "eks:ListNodegroups",
+          "eks:ListAddons"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "iam:GetOpenIDConnectProvider",
+          "iam:CreateOpenIDConnectProvider",
+          "iam:TagOpenIDConnectProvider"
+        ]
+        Resource = "*"
+      }
+    ]
   })
+}
+
+# Attach policy to your CodeBuild role
+resource "aws_iam_role_policy_attachment" "attach_codebuild_eks_policy" {
+  role       = "comp-prod-pipeline-codebuild-role" 
+  policy_arn = aws_iam_policy.codebuild_eks_oidc_policy.arn
 }
 
 # Attach the custom policy to the worker node IAM role
