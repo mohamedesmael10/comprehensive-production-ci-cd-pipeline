@@ -90,7 +90,7 @@
             elasticPassword: "Admin123!"
 
 
-    - name: Install Elasticsearch via Helm
+    - name: Install Elasticsearch via Helm 
       kubernetes.core.helm:
         name: elasticsearch
         chart_ref: elastic/elasticsearch
@@ -98,8 +98,10 @@
         create_namespace: false
         wait: true
         timeout: "900s"
+        reuse_values: true
         values_files:
           - /tmp/elasticsearch-values.yaml
+
           
     - name: Create LoadBalancer Service for Elasticsearch
       kubernetes.core.k8s:
