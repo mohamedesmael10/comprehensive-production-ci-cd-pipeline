@@ -1,21 +1,45 @@
+
 ---
-- name: Deploy Monitoring Stack (Prometheus, Grafana, ELK, CloudWatch) on EKS
+- name: Deploy Monitoring Stack (Prometheus, Grafana, ELK), Your App & TLS on EKS
   hosts: localhost
   connection: local
   gather_facts: false
 
   vars:
+    # General
+    region: us-east-1
+    cluster_name: mohamed-esmael-cluster-v2
+
+    # Namespaces
     namespace: mohamed-esmael-namespace
     cloudwatch_namespace: amazon-cloudwatch
-    cluster_name: mohamed-esmael-cluster-v2
-    region: us-east-1
 
+    # Domain names
+    es_host: elasticsearch.mohamedesmael.work.gd
+    grafana_host: grafana.mohamedesmael.work.gd
+    prometheus_host: prometheus.mohamedesmael.work.gd
+    app_host: myapp.mohamedesmael.work.gd
+
+    # TLS / ACME
+    email: mohamed.2714104@gmail.com
+    cluster_issuer: letsencrypt-prod
+
+    # Your App
+    service_name: mohamed-esmael-service
+  
   tasks:
+
+    # ──────────────────────────────────────────────────────────────────────────────
+    # 1. Configure kubectl
+    # ──────────────────────────────────────────────────────────────────────────────
     - name: Configure kubeconfig to connect to EKS
       ansible.builtin.shell: >
         aws eks update-kubeconfig --region {{ region }} --name {{ cluster_name }}
       changed_when: false
 
+    # ──────────────────────────────────────────────────────────────────────────────
+    # 2. Add Helm repos & Python client
+    # ──────────────────────────────────────────────────────────────────────────────
     - name: Add Helm repositories
       ansible.builtin.shell: |
         helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
@@ -30,12 +54,50 @@
         name: kubernetes
         extra_args: --user
 
+    # ──────────────────────────────────────────────────────────────────────────────
+    # 3. Deploy Your Application
+    # ──────────────────────────────────────────────────────────────────────────────
+    - name: Ensure application namespace exists
+      kubernetes.core.k8s:
+        api_version: v1
+        kind: Namespace
+        name: "{{ namespace }}"
+        state: present
+
+    - name: Deploy my application to EKS
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: "{{ service_name }}"
+            namespace: "{{ namespace }}"
+          spec:
+            replicas: 2
+            selector:
+              matchLabels:
+                app: "{{ service_name }}"
+            template:
+              metadata:
+                labels:
+                  app: "{{ service_name }}"
+              spec:
+                containers:
+                  - name: "{{ service_name }}"
+                    image: "{{ image_repo }}:{{ image_tag }}"
+                    ports:
+                      - containerPort: 80
+  
+    # ──────────────────────────────────────────────────────────────────────────────
+    # 4. Install Prometheus
+    # ──────────────────────────────────────────────────────────────────────────────
     - name: Install Prometheus via Helm
       kubernetes.core.helm:
         name: prometheus
         chart_ref: prometheus-community/prometheus
         release_namespace: "{{ namespace }}"
-        create_namespace: true
+        create_namespace: false
         wait: true
         timeout: "600s"
         values:
@@ -50,6 +112,9 @@
               storageClass: gp3
               size: 8Gi
 
+    # ──────────────────────────────────────────────────────────────────────────────
+    # 5. Install Grafana
+    # ──────────────────────────────────────────────────────────────────────────────
     - name: Install Grafana via Helm
       kubernetes.core.helm:
         name: grafana
@@ -65,6 +130,9 @@
             storageClassName: gp3
             size: 5Gi
 
+    # ──────────────────────────────────────────────────────────────────────────────
+    # 6. Install Elasticsearch
+    # ──────────────────────────────────────────────────────────────────────────────
     - name: Create Elasticsearch values file
       ansible.builtin.copy:
         dest: /tmp/elasticsearch-values.yaml
@@ -87,10 +155,8 @@
               memory: 1Gi
           security:
             enabled: true
-            elasticPassword: "Admin123!"
 
-
-    - name: Install Elasticsearch via Helm 
+    - name: Install Elasticsearch via Helm
       kubernetes.core.helm:
         name: elasticsearch
         chart_ref: elastic/elasticsearch
@@ -102,27 +168,191 @@
         values_files:
           - /tmp/elasticsearch-values.yaml
 
-          
-    - name: Create LoadBalancer Service for Elasticsearch
+    # ──────────────────────────────────────────────────────────────────────────────
+    # 7. Install cert-manager & ClusterIssuer
+    # ──────────────────────────────────────────────────────────────────────────────
+    - name: Install cert-manager
+      kubernetes.core.k8s:
+        state: present
+        src: https://github.com/cert-manager/cert-manager/releases/download/v1.15.0/cert-manager.yaml
+
+    - name: Create ClusterIssuer for Let's Encrypt
       kubernetes.core.k8s:
         state: present
         definition:
-          apiVersion: v1
-          kind: Service
+          apiVersion: cert-manager.io/v1
+          kind: ClusterIssuer
           metadata:
-            name: elasticsearch-lb
-            namespace: "{{ namespace }}"
+            name: "{{ cluster_issuer }}"
           spec:
-            type: LoadBalancer
-            ports:
-              - name: https
-                port: 9200
-                targetPort: 9200
-            selector:
-              app.kubernetes.io/app: elasticsearch-master
-              app: elasticsearch-master
+            acme:
+              email: "{{ email }}"
+              server: https://acme-v02.api.letsencrypt.org/directory
+              privateKeySecretRef:
+                name: letsencrypt-prod-private-key
+              solvers:
+                - http01:
+                    ingress:
+                      class: nginx
 
-    - name: Install Kibana via Helm
+    # ──────────────────────────────────────────────────────────────────────────────
+    # 8. Create Ingresses with TLS
+    # ──────────────────────────────────────────────────────────────────────────────
+
+    - name: Ingress for Elasticsearch
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: networking.k8s.io/v1
+          kind: Ingress
+          metadata:
+            name: elasticsearch-ingress
+            namespace: "{{ namespace }}"
+            annotations:
+              kubernetes.io/ingress.class: nginx
+              nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+              nginx.ingress.kubernetes.io/ssl-redirect: "true"
+              nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+              nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+              cert-manager.io/cluster-issuer: "{{ cluster_issuer }}"
+          spec:
+            tls:
+              - hosts:
+                  - "{{ es_host }}"
+                secretName: elasticsearch-tls
+            rules:
+              - host: "{{ es_host }}"
+                http:
+                  paths:
+                    - path: /
+                      pathType: Prefix
+                      backend:
+                        service:
+                          name: elasticsearch-lb
+                          port:
+                            number: 9200
+
+    - name: Ingress for Grafana
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: networking.k8s.io/v1
+          kind: Ingress
+          metadata:
+            name: grafana-ingress
+            namespace: "{{ namespace }}"
+            annotations:
+              kubernetes.io/ingress.class: nginx
+              nginx.ingress.kubernetes.io/ssl-redirect: "true"
+              cert-manager.io/cluster-issuer: "{{ cluster_issuer }}"
+          spec:
+            tls:
+              - hosts:
+                  - "{{ grafana_host }}"
+                secretName: grafana-tls
+            rules:
+              - host: "{{ grafana_host }}"
+                http:
+                  paths:
+                    - path: /
+                      pathType: Prefix
+                      backend:
+                        service:
+                          name: grafana-lb
+                          port:
+                            number: 80
+
+    - name: Ingress for Prometheus
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: networking.k8s.io/v1
+          kind: Ingress
+          metadata:
+            name: prometheus-ingress
+            namespace: "{{ namespace }}"
+            annotations:
+              kubernetes.io/ingress.class: nginx
+              nginx.ingress.kubernetes.io/ssl-redirect: "true"
+              cert-manager.io/cluster-issuer: "{{ cluster_issuer }}"
+          spec:
+            tls:
+              - hosts:
+                  - "{{ prometheus_host }}"
+                secretName: prometheus-tls
+            rules:
+              - host: "{{ prometheus_host }}"
+                http:
+                  paths:
+                    - path: /
+                      pathType: Prefix
+                      backend:
+                        service:
+                          name: prometheus-server-lb 
+                          port:
+                            number: 80
+
+    - name: Ingress for My App
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: networking.k8s.io/v1
+          kind: Ingress
+          metadata:
+            name: "{{ service_name }}-ingress"
+            namespace: "{{ namespace }}"
+            annotations:
+              kubernetes.io/ingress.class: nginx
+              nginx.ingress.kubernetes.io/ssl-redirect: "true"
+              cert-manager.io/cluster-issuer: "{{ cluster_issuer }}"
+          spec:
+            tls:
+              - hosts:
+                  - "{{ app_host }}"
+                secretName: app-tls
+            rules:
+              - host: "{{ app_host }}"
+                http:
+                  paths:
+                    - path: /
+                      pathType: Prefix
+                      backend:
+                        service:
+                          name: myapp-lb 
+                          port:
+                            number: 80
+
+
+    # ──────────────────────────────────────────────────────────────────────────────
+    # 8. Retrieve Elasticsearch credentials
+    # ──────────────────────────────────────────────────────────────────────────────
+    - name: Read Elasticsearch credentials secret
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Secret
+        namespace: "{{ namespace }}"
+        name: elasticsearch-master-credentials
+      register: es_creds
+
+    - name: Decode Elasticsearch username & password
+      set_fact:
+        elasticsearch_username: "{{ es_creds.resources[0].data.username | b64decode }}"
+        elasticsearch_password: "{{ es_creds.resources[0].data.password | b64decode }}"
+
+    # ──────────────────────────────────────────────────────────────────────────────
+    # 9. Clean stale Kibana hook resources
+    # ──────────────────────────────────────────────────────────────────────────────
+    - name: Delete stale Kibana pre-install hooks
+      ansible.builtin.shell: |
+        kubectl delete job,serviceaccount,role,rolebinding \
+          -l app.kubernetes.io/instance=kibana \
+          -n {{ namespace }} --ignore-not-found
+      changed_when: false
+
+    # ──────────────────────────────────────────────────────────────────────────────
+    # 10. Install Kibana
+    # ──────────────────────────────────────────────────────────────────────────────
+    - name: Install or upgrade Kibana via Helm
       kubernetes.core.helm:
         name: kibana
         chart_ref: elastic/kibana
@@ -131,11 +361,16 @@
         wait: true
         timeout: "600s"
         values:
-          elasticsearchHosts: "http://elasticsearch-master:9200"
-          elasticsearchUsername: "elastic"
-          elasticsearchPassword: "Admin123!"
+          elasticsearchHosts: "https://{{ es_host }}/"
+          elasticsearchUsername: "{{ elasticsearch_username }}"
+          elasticsearchPassword: "{{ elasticsearch_password }}"
+          elasticsearchSSL:
+            verificationMode: none
+          logLevel: debug
 
-
+    # ──────────────────────────────────────────────────────────────────────────────
+    # 9. Associate IAM OIDC & Install Fluent Bit
+    # ──────────────────────────────────────────────────────────────────────────────
     - name: Associate IAM OIDC provider with EKS
       ansible.builtin.shell: |
         eksctl utils associate-iam-oidc-provider \
@@ -143,7 +378,9 @@
           --cluster {{ cluster_name }} \
           --approve
       register: oidc_result
-      changed_when: "'has been associated' in oidc_result.stdout or 'created' in oidc_result.stdout"
+      changed_when: >
+        "'has been associated' in oidc_result.stdout or
+         'created' in oidc_result.stdout"
 
     - name: Ensure namespace for CloudWatch exists
       kubernetes.core.k8s:

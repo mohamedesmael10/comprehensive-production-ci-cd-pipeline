@@ -49,7 +49,7 @@ phases:
     commands:
       - echo "Running Ansible Playbook for EKS deployment..."
       - wget https://raw.githubusercontent.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/codepipeline/Ansible/deploy_monitoring.yaml
-      - ansible-playbook deploy_monitoring.yaml --extra-vars "image_tag=$IMAGE_TAG image_repo=$ECR_REPO_URI namespace=$EKS_NAMESPACE service_name=$EKS_SERVICE_NAME"
+        - ansible-playbook deploy_monitoring.yaml --extra-vars "image_repo=$ECR_REPO_URI image_tag=$IMAGE_TAG namespace=$EKS_NAMESPACE service_name=$EKS_SERVICE_NAME"
 
 artifacts:
   files:
