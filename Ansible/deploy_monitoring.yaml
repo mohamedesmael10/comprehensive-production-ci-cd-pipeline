@@ -99,7 +99,7 @@
         release_namespace: "{{ namespace }}"
         create_namespace: false
         wait: true
-        timeout: "600s"
+        timeout: "900s"
         values:
           alertmanager:
             persistence:
@@ -107,6 +107,9 @@
               storageClass: gp3
               size: 2Gi
           server:
+            podLabels:                         
+              app.kubernetes.io/name: prometheus
+              app.kubernetes.io/component: server
             persistentVolume:
               enabled: true
               storageClass: gp3
@@ -122,8 +125,11 @@
         release_namespace: "{{ namespace }}"
         create_namespace: false
         wait: true
-        timeout: "600s"
+        timeout: "900s"
+        reuse_values: true           
         values:
+          podLabels:                         
+            app.kubernetes.io/name: grafana
           adminPassword: "Admin123"
           persistence:
             enabled: true
@@ -139,6 +145,10 @@
         content: |
           replicas: 3
           minimumMasterNodes: 2
+          podLabels:
+            app: elasticsearch-master
+            component: master
+            name: elasticsearch
           volumeClaimTemplate:
             accessModes: [ "ReadWriteOnce" ]
             resources:
@@ -207,30 +217,30 @@
           kind: Ingress
           metadata:
             name: elasticsearch-ingress
-            namespace: "{{ namespace }}"
+            namespace: mohamed-esmael-namespace
             annotations:
               kubernetes.io/ingress.class: nginx
+              cert-manager.io/cluster-issuer: letsencrypt-prod
               nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
               nginx.ingress.kubernetes.io/ssl-redirect: "true"
-              nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
-              nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
-              cert-manager.io/cluster-issuer: "{{ cluster_issuer }}"
           spec:
+            ingressClassName: nginx 
             tls:
               - hosts:
-                  - "{{ es_host }}"
+                  - elasticsearch.mohamedesmael.work.gd
                 secretName: elasticsearch-tls
             rules:
-              - host: "{{ es_host }}"
+              - host: elasticsearch.mohamedesmael.work.gd
                 http:
-                  paths:
+                  paths:       
                     - path: /
                       pathType: Prefix
                       backend:
                         service:
-                          name: elasticsearch-lb
+                          name: elasticsearch-svc
                           port:
-                            number: 9200
+                            number: 80
+
 
     - name: Ingress for Grafana
       kubernetes.core.k8s:
@@ -240,27 +250,37 @@
           kind: Ingress
           metadata:
             name: grafana-ingress
-            namespace: "{{ namespace }}"
+            namespace: mohamed-esmael-namespace
             annotations:
               kubernetes.io/ingress.class: nginx
+              cert-manager.io/cluster-issuer: letsencrypt-prod
+              nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
               nginx.ingress.kubernetes.io/ssl-redirect: "true"
-              cert-manager.io/cluster-issuer: "{{ cluster_issuer }}"
           spec:
+            ingressClassName: nginx 
             tls:
               - hosts:
-                  - "{{ grafana_host }}"
+                  - grafana.mohamedesmael.work.gd
                 secretName: grafana-tls
             rules:
-              - host: "{{ grafana_host }}"
+              - host: grafana.mohamedesmael.work.gd
                 http:
                   paths:
+                    - path: /.well-known/acme-challenge/*
+                      pathType: ImplementationSpecific
+                      backend:
+                        service:
+                          name: grafana-svc
+                          port:
+                            number: 80
                     - path: /
                       pathType: Prefix
                       backend:
                         service:
-                          name: grafana-lb
+                          name: grafana-svc
                           port:
                             number: 80
+
 
     - name: Ingress for Prometheus
       kubernetes.core.k8s:
@@ -270,25 +290,34 @@
           kind: Ingress
           metadata:
             name: prometheus-ingress
-            namespace: "{{ namespace }}"
+            namespace: mohamed-esmael-namespace
             annotations:
               kubernetes.io/ingress.class: nginx
+              cert-manager.io/cluster-issuer: letsencrypt-prod
+              nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
               nginx.ingress.kubernetes.io/ssl-redirect: "true"
-              cert-manager.io/cluster-issuer: "{{ cluster_issuer }}"
           spec:
+            ingressClassName: nginx 
             tls:
               - hosts:
-                  - "{{ prometheus_host }}"
+                  - prometheus.mohamedesmael.work.gd
                 secretName: prometheus-tls
             rules:
-              - host: "{{ prometheus_host }}"
+              - host: prometheus.mohamedesmael.work.gd
                 http:
                   paths:
+                    - path: /.well-known/acme-challenge/*
+                      pathType: ImplementationSpecific
+                      backend:
+                        service:
+                          name: prometheus-svc
+                          port:
+                            number: 80
                     - path: /
                       pathType: Prefix
                       backend:
                         service:
-                          name: prometheus-server-lb 
+                          name: prometheus-svc
                           port:
                             number: 80
 
@@ -299,26 +328,35 @@
           apiVersion: networking.k8s.io/v1
           kind: Ingress
           metadata:
-            name: "{{ service_name }}-ingress"
-            namespace: "{{ namespace }}"
+            name: mohamed-esmael-service-ingress
+            namespace: mohamed-esmael-namespace
             annotations:
               kubernetes.io/ingress.class: nginx
+              cert-manager.io/cluster-issuer: letsencrypt-prod
+              nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
               nginx.ingress.kubernetes.io/ssl-redirect: "true"
-              cert-manager.io/cluster-issuer: "{{ cluster_issuer }}"
           spec:
+            ingressClassName: nginx 
             tls:
               - hosts:
-                  - "{{ app_host }}"
-                secretName: app-tls
+                  - myapp.mohamedesmael.work.gd
+                secretName: myapp-tls
             rules:
-              - host: "{{ app_host }}"
+              - host: myapp.mohamedesmael.work.gd
                 http:
                   paths:
+                    - path: /.well-known/acme-challenge/*
+                      pathType: ImplementationSpecific
+                      backend:
+                        service:
+                          name: myapp-svc
+                          port:
+                            number: 80
                     - path: /
                       pathType: Prefix
                       backend:
                         service:
-                          name: myapp-lb 
+                          name: myapp-svc
                           port:
                             number: 80
 
@@ -339,27 +377,25 @@
         elasticsearch_username: "{{ es_creds.resources[0].data.username | b64decode }}"
         elasticsearch_password: "{{ es_creds.resources[0].data.password | b64decode }}"
 
-    # ──────────────────────────────────────────────────────────────────────────────
-    # 9. Clean stale Kibana hook resources
-    # ──────────────────────────────────────────────────────────────────────────────
+       # 9. Clean stale Kibana hook resources (serviceaccounts, jobs, etc)
     - name: Delete stale Kibana pre-install hooks
       ansible.builtin.shell: |
         kubectl delete job,serviceaccount,role,rolebinding \
           -l app.kubernetes.io/instance=kibana \
-          -n {{ namespace }} --ignore-not-found
+          -n "{{ namespace }}" --ignore-not-found
       changed_when: false
 
-    # ──────────────────────────────────────────────────────────────────────────────
-    # 10. Install Kibana
-    # ──────────────────────────────────────────────────────────────────────────────
-    - name: Install or upgrade Kibana via Helm
+    # 10. Install or upgrade Kibana via Helm, with FORCE + RESET_VALUES
+    - name: Install/Upgrade Kibana via Helm
       kubernetes.core.helm:
         name: kibana
         chart_ref: elastic/kibana
         release_namespace: "{{ namespace }}"
         create_namespace: false
         wait: true
-        timeout: "600s"
+        timeout: "900s"
+        force: true
+        reset_values: true
         values:
           elasticsearchHosts: "https://{{ es_host }}/"
           elasticsearchUsername: "{{ elasticsearch_username }}"
@@ -367,6 +403,7 @@
           elasticsearchSSL:
             verificationMode: none
           logLevel: debug
+
 
     # ──────────────────────────────────────────────────────────────────────────────
     # 9. Associate IAM OIDC & Install Fluent Bit
@@ -396,7 +433,7 @@
         release_namespace: "{{ cloudwatch_namespace }}"
         create_namespace: false
         wait: true
-        timeout: "600s"
+        timeout: "900s"
         values:
           cloudWatch:
             region: "{{ region }}"
