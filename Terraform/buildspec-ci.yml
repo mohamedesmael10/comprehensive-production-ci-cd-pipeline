@@ -74,11 +74,7 @@ phases:
         fi
 
       - |
-        aws sns publish \
-          --region "$AWS_REGION" \
-          --topic-arn arn:aws:sns:$AWS_REGION:$AWS_ACCOUNT_ID:codebuild-notifications \
-          --subject "CD Pipeline $STATUS — $APP_NAME #$CODEBUILD_BUILD_NUMBER" \
-          --message "$(cat <<EOF
+        aws sns publish --region "$AWS_REGION" --topic-arn arn:aws:sns:$AWS_REGION:$AWS_ACCOUNT_ID:codebuild-notifications --subject "CD Pipeline $STATUS — $APP_NAME #$CODEBUILD_BUILD_NUMBER" --message "$(cat <<EOF
         Hello,
 
         Your CodeBuild pipeline *$APP_NAME* has *$STATUS*.
