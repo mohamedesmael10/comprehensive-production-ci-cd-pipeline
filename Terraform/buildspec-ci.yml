@@ -66,7 +66,7 @@ phases:
       - docker push "$ECR_REPO_URI:$IMAGE_TAG"
       - docker push "$ECR_REPO_URI:latest"
 
-       - |
+      - |
         if [ "$CODEBUILD_BUILD_SUCCEEDING" -eq "1" ]; then
           STATUS="SUCCEEDED"
         else
