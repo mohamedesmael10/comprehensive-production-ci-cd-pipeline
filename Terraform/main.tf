@@ -2,9 +2,6 @@ provider "aws" {
   region = var.aws_region
 }
 
-# ─────────────────────────────── #
-# Artifact Bucket & IAM Roles      #
-# ─────────────────────────────── #
 
 resource "random_id" "bucket_suffix" {
   byte_length = 4
@@ -41,9 +38,6 @@ resource "aws_iam_role_policy_attachment" "codebuild_s3_access_attachment" {
   policy_arn = aws_iam_policy.codebuild_s3_access.arn
 }
 
-# ─────────────────────────────── #
-# CodeBuild IAM Role               #
-# ─────────────────────────────── #
 
 data "aws_iam_policy_document" "codebuild_assume" {
   statement {
@@ -84,9 +78,7 @@ resource "aws_iam_role_policy" "codebuild_secrets_access" {
   })
 }
 
-# ─────────────────────────────── #
-# EKS aws-auth Mapping Patch       #
-# ─────────────────────────────── #
+
 
 data "aws_caller_identity" "current" {}
 
@@ -170,7 +162,6 @@ resource "aws_iam_role_policy" "codepipeline_inline" {
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
-      # Allow access to the S3 artifact bucket
       {
         Effect = "Allow",
         Action = [
@@ -185,7 +176,6 @@ resource "aws_iam_role_policy" "codepipeline_inline" {
           "${aws_s3_bucket.artifact_bucket.arn}/*"
         ]
       },
-      # Allow triggering CodeBuild projects
       {
         Effect = "Allow",
         Action = [
@@ -198,13 +188,11 @@ resource "aws_iam_role_policy" "codepipeline_inline" {
           aws_codebuild_project.cd_deploy.arn
         ]
       },
-      # Allow CodePipeline to use CodeStar Connection for GitHub
       {
         Effect = "Allow",
         Action = "codestar-connections:UseConnection",
         Resource = var.codeconnection_arn
       },
-      # Optional: Allow updating EKS resources via CodePipeline
       {
         Effect = "Allow",
         Action = [
@@ -285,9 +273,6 @@ resource "null_resource" "patch_aws_auth" {
   }
 }
 
-# ─────────────────────────────── #
-# CodePipeline & CodeBuild Projects #
-# ─────────────────────────────── #
 
 data "aws_iam_policy_document" "codepipeline_assume" {
   statement {
@@ -326,9 +311,7 @@ resource "aws_iam_role_policy" "codepipeline_connection" {
     Statement = [{ Effect = "Allow", Action = "codestar-connections:UseConnection", Resource = var.codeconnection_arn }]
   })
 }
-# ─────────────────────────────── #
-# CodeBuild Projects
-# ─────────────────────────────── #
+
 
 resource "aws_codebuild_project" "ci_build" {
   name         = "${var.project_name}-ci"
@@ -400,9 +383,6 @@ resource "aws_codebuild_project" "cd_deploy" {
   build_timeout = 60
 }
 
-# ─────────────────────────────── #
-# CodePipeline
-# ─────────────────────────────── #
 
 resource "aws_codepipeline" "app_pipeline" {
   name     = var.project_name
@@ -498,9 +478,6 @@ resource "aws_codepipeline" "app_pipeline" {
 
 }
 
-# ─────────────────────────────── #
-# Lambda for EKS Service Update
-# ─────────────────────────────── #
 
 data "aws_lambda_function" "update_eks_service" {
   function_name = "ECSImageUpdateLambda"
@@ -578,9 +555,6 @@ resource "aws_iam_role_policy_attachment" "lambda_exec_policies" {
   policy_arn = each.value
 }
 
-# ─────────────────────────────── #
-# EventBridge Rule (Trigger Lambda on ECR Push)
-# ─────────────────────────────── #
 
 resource "aws_cloudwatch_event_rule" "ecr_image_push" {
   name        = "${var.project_name}-ecr-push-rule"

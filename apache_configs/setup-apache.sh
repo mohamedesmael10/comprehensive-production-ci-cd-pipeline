@@ -90,4 +90,4 @@ else
 fi
 
 echo
-echo "🎉✅ setup-apache.sh completed successfully."
+echo "setup-apache.sh completed successfully."
