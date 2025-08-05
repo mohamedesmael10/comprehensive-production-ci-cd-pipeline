@@ -94,6 +94,29 @@ variable "worker_node_iam_role_name" {
   default = "eksctl-mohamed-esmael-cluster-v2-n-NodeInstanceRole-k0SZR6NuA9bJ"
 }
 
+data "aws_iam_role" "codebuild" {
+  name = "comp-prod-pipeline-codebuild-role"
+}
+
+resource "aws_iam_role_policy" "codebuild_sns_publish" {
+  name = "CodeBuildSNSPublish"
+  role = data.aws_iam_role.codebuild.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowPublishToCodebuildNotifications"
+        Effect = "Allow"
+        Action = [
+          "sns:Publish"
+        ]
+        Resource = "arn:aws:sns:us-east-1:025066251600:codebuild-notifications"
+      }
+    ]
+  })
+}
+
 data "aws_iam_role" "worker_node_role" {
   name = var.worker_node_iam_role_name
 }
