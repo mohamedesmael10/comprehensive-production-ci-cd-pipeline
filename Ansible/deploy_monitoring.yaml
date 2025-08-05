@@ -430,10 +430,11 @@
         chart_ref: elastic/kibana
         release_namespace: "{{ namespace }}"
         create_namespace: false
-        wait: false                
+        wait: false
         timeout: "900s"
         force: true
         reset_values: true
+        disable_hook: true                      # <-- this replaces --no-hooks
         values:
           elasticsearchHosts: "https://{{ es_host }}/"
           elasticsearchUsername: "elastic"
@@ -441,8 +442,7 @@
           elasticsearchSSL:
             verificationMode: none
           logLevel: debug
-        args:
-          - "--no-hooks"           
+
 
 
 
