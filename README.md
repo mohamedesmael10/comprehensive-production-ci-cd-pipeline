@@ -108,9 +108,6 @@ It targets a **Java 17+ Maven** microservice but can be adapted to any container
 
 ```
 ```
-
----
-
 ##  Quickstart
 
 1. **Clone** this repo:  
@@ -170,8 +167,8 @@ It targets a **Java 17+ Maven** microservice but can be adapted to any container
 | **Publish SNS Notification**  | Alerts subscribers of success/failure                          |
 | **Trigger CD Pipeline**       | Starts downstream CD via CodePipeline with new `IMAGE_TAG`     |
 
-![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/codepipeline/Screenshots/(3).jpg)
 ![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/codepipeline/Screenshots/(4).jpg)
+![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/codepipeline/Screenshots/(3).jpg)
 ![Screenshots](https://github.com/mohamedesmael10/comprehensive-production-ci-cd-pipeline/blob/codepipeline/Screenshots/(12).png)
 ---
 
@@ -287,14 +284,12 @@ Make sure those records are live before issuing certificates.
 
 ##  Environment Variables
 
-## 🔐 Environment Variables
-
 Environment variables used throughout **CodeBuild**, **CodePipeline**, and **Lambda** are grouped below.  
 ** Sensitive values should be stored in [AWS Secrets Manager](https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.html), NOT in Terraform.**
 
 ---
 
-### 📦 General Pipeline Variables
+###  General Pipeline Variables
 
 | Variable             | Purpose                                                     |
 | -------------------- | ----------------------------------------------------------- |
@@ -375,4 +370,5 @@ Environment variables used throughout **CodeBuild**, **CodePipeline**, and **Lam
 © 2025 Mohamed Esmael · [LinkedIn](https://www.linkedin.com/in/mohamedesmael/) · [GitHub](https://github.com/mohamedesmael10/)
 
 ```
+
 
