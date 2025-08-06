@@ -74,20 +74,19 @@ phases:
         fi
 
       - |
-        aws sns publish --region "$AWS_REGION" --topic-arn "arn:aws:sns:$AWS_REGION:$AWS_ACCOUNT_ID:codebuild-notifications" --subject "CD Pipeline $STATUS — $APP_NAME #$CODEBUILD_BUILD_NUMBER" --message "$(cat <<EOF
+        aws sns publish --region "$AWS_REGION" --topic-arn "arn:aws:sns:$AWS_REGION:$AWS_ACCOUNT_ID:codebuild-notifications" --subject "CI Pipeline $STATUS — $APP_NAME #$CODEBUILD_BUILD_NUMBER" --message "$(cat <<EOF
         Hello,
 
-        Your CodeBuild pipeline *$APP_NAME* has *$STATUS*.
+        Your CI pipeline $APP_NAME has $STATUS.
 
-        • Build number: $CODEBUILD_BUILD_NUMBER
-        • Image tag:     $IMAGE_TAG
+        • Build number: $CODEBUILD_BUILD_NUMBER  
+        • Image tag:     $IMAGE_TAG  
         • Logs & details: https://console.aws.amazon.com/codebuild/home?region=$AWS_REGION#/builds/$CODEBUILD_BUILD_ID/view
 
         Regards,
         CI/CD Bot
         EOF
         )"
-
 
 
 artifacts:
