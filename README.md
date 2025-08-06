@@ -369,6 +369,6 @@ Environment variables used throughout **CodeBuild**, **CodePipeline**, and **Lam
 ---
 © 2025 Mohamed Esmael · [LinkedIn](https://www.linkedin.com/in/mohamedesmael/) · [GitHub](https://github.com/mohamedesmael10/)
 
-```
+
 
 
