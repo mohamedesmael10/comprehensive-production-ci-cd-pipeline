@@ -1,0 +1,83 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana-svc
+  namespace: mohamed-esmael-namespace
+  labels:
+    app.kubernetes.io/name: grafana
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: grafana
+  ports:
+    - name: http
+      port: 80
+      targetPort: 3000
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-svc
+  namespace: mohamed-esmael-namespace
+  labels:
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/component: server
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/component: server
+  ports:
+    - name: web
+      port: 80
+      targetPort: 9090
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: myapp-svc
+  namespace: mohamed-esmael-namespace
+  labels:
+    app: mohamed-esmael-service
+spec:
+  type: ClusterIP
+  selector:
+    app: mohamed-esmael-service
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch-svc
+  namespace: mohamed-esmael-namespace
+spec:
+  type: ClusterIP
+  selector:
+    app: elasticsearch-svc
+    release: elasticsearch
+  ports:
+    - port: 80
+      targetPort: 9200
+      name: http
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kibana-svc
+  namespace: mohamed-esmael-namespace
+spec:
+  type: ClusterIP
+  selector:
+    app: kibana
+  ports:
+    - port: 80
+      targetPort: 5601
+      name: http

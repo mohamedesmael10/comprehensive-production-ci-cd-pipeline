@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: lambda-sa
+  namespace: mohamed-esmael-namespace
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: lambda-sa-crb
+subjects:
+  - kind: ServiceAccount
+    name: lambda-sa
+    namespace: mohamed-esmael-namespace
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+
+
+---
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: lambda-sa-token
+  namespace: mohamed-esmael-namespace
+  annotations:
+    kubernetes.io/service-account.name: lambda-sa
+type: kubernetes.io/service-account-token

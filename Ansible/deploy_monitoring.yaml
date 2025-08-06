@@ -6,40 +6,30 @@
   gather_facts: false
 
   vars:
-    # General
     region: us-east-1
     cluster_name: mohamed-esmael-cluster-v2
 
-    # Namespaces
     namespace: mohamed-esmael-namespace
     cloudwatch_namespace: amazon-cloudwatch
 
-    # Domain names
     es_host: elasticsearch.mohamedesmael.work.gd
     grafana_host: grafana.mohamedesmael.work.gd
     prometheus_host: prometheus.mohamedesmael.work.gd
     app_host: myapp.mohamedesmael.work.gd
 
-    # TLS / ACME
     email: mohamed.2714104@gmail.com
     cluster_issuer: letsencrypt-prod
 
-    # Your App
     service_name: mohamed-esmael-service
   
   tasks:
 
-    # ──────────────────────────────────────────────────────────────────────────────
-    # 1. Configure kubectl
-    # ──────────────────────────────────────────────────────────────────────────────
+    
     - name: Configure kubeconfig to connect to EKS
       ansible.builtin.shell: >
         aws eks update-kubeconfig --region {{ region }} --name {{ cluster_name }}
       changed_when: false
 
-    # ──────────────────────────────────────────────────────────────────────────────
-    # 2. Add Helm repos & Python client
-    # ──────────────────────────────────────────────────────────────────────────────
     - name: Add Helm repositories
       ansible.builtin.shell: |
         helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
@@ -54,9 +44,7 @@
         name: kubernetes
         extra_args: --user
 
-    # ──────────────────────────────────────────────────────────────────────────────
-    # 3. Deploy Your Application
-    # ──────────────────────────────────────────────────────────────────────────────
+  
     - name: Ensure application namespace exists
       kubernetes.core.k8s:
         api_version: v1
@@ -89,9 +77,6 @@
                     ports:
                       - containerPort: 80
   
-    # ──────────────────────────────────────────────────────────────────────────────
-    # 4. Install Prometheus
-    # ──────────────────────────────────────────────────────────────────────────────
     - name: Install Prometheus via Helm
       kubernetes.core.helm:
         name: prometheus
@@ -115,9 +100,6 @@
               storageClass: gp3
               size: 8Gi
 
-    # ──────────────────────────────────────────────────────────────────────────────
-    # 5. Install Grafana
-    # ──────────────────────────────────────────────────────────────────────────────
     - name: Install Grafana via Helm
       kubernetes.core.helm:
         name: grafana
@@ -135,9 +117,7 @@
             enabled: true
             storageClassName: gp3
             size: 5Gi
-# ──────────────────────────────────────────────────────────────────────────────
-# 6. Install Elasticsearch (with static user & password)
-# ──────────────────────────────────────────────────────────────────────────────
+
     - name: Create Elasticsearch values file (with static creds)
       ansible.builtin.copy:
         dest: /tmp/elasticsearch-values.yaml
@@ -185,9 +165,6 @@
 
 
 
-    # ──────────────────────────────────────────────────────────────────────────────
-    # 7. Install cert-manager & ClusterIssuer
-    # ──────────────────────────────────────────────────────────────────────────────
     - name: Install cert-manager CRDs and controllers
       kubernetes.core.k8s:
         src: https://github.com/cert-manager/cert-manager/releases/download/v1.15.0/cert-manager.yaml
@@ -216,9 +193,6 @@
                     ingress:
                       class: nginx
 
-    # ──────────────────────────────────────────────────────────────────────────────
-    # 8. Create Ingresses with TLS
-    # ──────────────────────────────────────────────────────────────────────────────
 
     - name: Ingress for Elasticsearch
       kubernetes.core.k8s:
@@ -402,7 +376,6 @@
                           port:
                             number: 80
 
-       # 9. Clean stale Kibana hook resources (serviceaccounts, jobs, etc)
     - name: Delete stale Kibana pre-install hooks
       ansible.builtin.shell: |
         kubectl delete job,serviceaccount,role,rolebinding \
@@ -434,7 +407,7 @@
         timeout: "900s"
         force: true
         reset_values: true
-        disable_hook: true                      # <-- this replaces --no-hooks
+        disable_hook: true                    
         values:
           elasticsearchHosts: "https://{{ es_host }}/"
           elasticsearchUsername: "elastic"
@@ -444,11 +417,6 @@
           logLevel: debug
 
 
-
-
-    # ──────────────────────────────────────────────────────────────────────────────
-    # 9. Associate IAM OIDC & Install Fluent Bit
-    # ──────────────────────────────────────────────────────────────────────────────
     - name: Associate IAM OIDC provider with EKS
       ansible.builtin.shell: |
         eksctl utils associate-iam-oidc-provider \
