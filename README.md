@@ -1,4 +1,3 @@
-```
 # Comprehensive Production CI/CD Pipeline on AWS
 
 This project demonstrates a **production-grade CI/CD pipeline** on AWS using **CodeCommit → CodeBuild → CodePipeline → ECR → EKS**, with automatic image promotion, deployments via Ansible, and notifications via SNS. It covers **build → test → analysis → containerization → deployment → monitoring** for a **Java 17+ Maven application**, following DevOps and GitOps best practices.
@@ -376,4 +375,4 @@ Environment variables used throughout **CodeBuild**, **CodePipeline**, and **Lam
 © 2025 Mohamed Esmael · [LinkedIn](https://www.linkedin.com/in/mohamedesmael/) · [GitHub](https://github.com/mohamedesmael10/)
 
 ```
-```
+
