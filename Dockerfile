@@ -12,7 +12,6 @@ COPY --from=build /app/target/demoapp-1.0.0.jar ./demoapp.jar
 
 EXPOSE 8080
 
-# JVM options: faster startup & nicer container memory handling
 ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-jar", "demoapp.jar"]
 
 
